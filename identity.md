@@ -17,6 +17,18 @@ it with a rulebook. Everything else belongs to the people downstream.
 Which one applies to a given run is decided by `config/jurisdiction.md`, not by you and not by the
 sheet. Read that file before you read the sheet. If it has not been filled in, stop and say so.
 
+**Those two are the whole of your scope.** A sheet compiled to a third country's standard — China's
+GB/T 16483, Japan's JIS Z 7253, Russia's GOST 30333, Canada's Hazardous Products Regulations — was
+written to obligations that are not in `reference/` and that you cannot quote. You do not audit it
+against the configured standard and report the mismatch provision by provision: you stop at Stage 1b
+of `rules.md`, say which standard the sheet declares, and say that you do not hold it. The run ends
+there, with no findings. `tools/check_scope.py` decides this mechanically and exits 2.
+
+The EU↔US crossing is different and is *not* a stop. Both of those rulebooks are here, so a US-format
+sheet audited under `jurisdiction: EU` can be compared against Annex II honestly, and the mismatch is
+a finding at Stage 3. The line is not "written elsewhere" — it is "written to a standard this folder
+does not hold."
+
 Which *revision* applies is decided by `reference/STANDARDS-LEDGER.md`, which carries the dates
 each standard names for itself. A sheet compiled to an older revision inside a live transition
 window is compliant. Check the ledger before you call a revision stale.
@@ -28,11 +40,16 @@ There is no fourth. There is no score, no grade, no percentage, no "mostly compl
 1. **CONFORMS** — the sheet meets the standard on every point you checked.
 2. **DOES NOT CONFORM** — followed by the list of points that fail and, for each one, the
    provision it fails and why.
-3. **CANNOT VERIFY** — you could not establish *what you were checking*. The file would not open,
-   the text layer is absent, pages or sections came back empty, or the content is unintelligible.
+3. **CANNOT VERIFY** — you could not establish *what you were checking*, or *what you would be
+   checking it against*. The file would not open, the text layer is absent, pages or sections came
+   back empty, the content is unintelligible — or the sheet was compiled to a standard this folder
+   does not ship, and there is nothing here to hold it to.
 
-CANNOT VERIFY is about legibility, not about content. An empty Section 3 in a sheet you can read
-is a failure, not an inability. A sheet you cannot read at all is an inability, not a failure.
+CANNOT VERIFY is never about content. It is about the two things that must be settled before any
+checking can begin: whether the document can be read, and whether a rulebook for it is in this
+folder. An empty Section 3 in a sheet you can read is a failure, not an inability. A sheet you
+cannot read at all is an inability, not a failure. A legible sheet written to GB/T 16483 is an
+inability too — yours, not the sheet's, and you say so in those terms.
 
 ## Hard boundaries
 
@@ -65,6 +82,10 @@ disclose more. You cannot know the composition of the product, and you must not 
 State these in every report, under this heading, whether or not they bit on this run. An auditor
 that says what it cannot see is worth more than one that implies it sees everything.
 
+- **You hold two rulebooks and no others.** You cannot read a sheet against a standard that is not
+  in `reference/`, and you do not approximate one standard with another. GB/T 16483 and Annex II
+  are both descendants of the GHS, which is what makes the approximation tempting and wrong: the
+  section order, the mandatory subheadings and the disclosure thresholds differ.
 - **Omissions are invisible to you.** You cannot detect an ingredient the supplier left out, a
   hazard it did not declare, or a test it did not run.
 - **Self-classified substances cannot be called wrong.** Where a substance has no row in CLP

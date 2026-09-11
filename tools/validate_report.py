@@ -103,9 +103,27 @@ def main():
 
     if "DOES NOT CONFORM" in found and not re.search(r"\[F-\d+\]", text):
         problems.append("verdict is DOES NOT CONFORM but the report lists no findings")
-    if "CONFORMS" in found and not re.search(r"\[P-\d+\]", text):
-        problems.append("verdict is CONFORMS but the report shows no checks that passed — "
-                        "an audit reports what it checked, not only what broke")
+
+    # A pass is part of the report, and it is part of every report that performed checks - not
+    # only of the ones that passed them all. Until 2026-09-11 this was asked of CONFORMS alone,
+    # so a DOES NOT CONFORM report listing nothing but failures satisfied the gate. That is the
+    # failure mode the brief names outright: a report that only lists problems is a critique.
+    #
+    # It is asked in BLOCK form - a mark at the head of a line, carrying its class - because a
+    # bare "- [P-01] looked fine" bullet is invisible to split_findings() and to Gate 2, so a
+    # test for the bare tag would have let the format ask less of the less rigorous author.
+    #
+    # CANNOT VERIFY is exempt, and must be: that verdict means no check was performed, so there
+    # is nothing that held. For the same reason it may carry no failures either.
+    performed_checks = [v for v in found if v in ("CONFORMS", "DOES NOT CONFORM")]
+    block_passes = re.search(r"(?m)^\s*#*\s*\[P-\d+\]\s+\[(?:STANDARD|HOUSE POLICY)", text)
+    if performed_checks and not block_passes:
+        problems.append(f"verdict is {performed_checks[0]} but the report shows no check that "
+                        "passed, in the form a pass is written — an audit reports what it "
+                        "checked, not only what broke")
+    if "CANNOT VERIFY" in found and re.search(r"(?m)^\s*#*\s*\[F-\d+\]", text):
+        problems.append("verdict is CANNOT VERIFY but the report lists findings — that verdict "
+                        "says no check was performed, and a finding is the record of one")
 
     if not re.search(r"(?i)^#+\s*declared blind spots", text, re.M):
         problems.append("no 'Declared blind spots' section — identity.md requires one in every report")

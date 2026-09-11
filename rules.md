@@ -17,7 +17,12 @@ Read `config/jurisdiction.md`. It names the regime this installation audits unde
 - Never infer jurisdiction from an IP address, a locale, or where the supplier sits. A reviewer
   in Tel Aviv may be auditing for a German legal entity. The settings file is the answer.
 
-## Stage 1 — Legibility
+## Stage 1 — Legibility, then scope
+
+Two questions, in this order: can the sheet be read at all, and is it a sheet this folder has a
+rulebook for. Either one can end the run before a single provision is opened.
+
+### 1a — Legibility
 
 Extract the sheet. `tools/extract.py` produces `<name>.salus.md`, a line-anchored rendering, plus
 a fidelity report.
@@ -27,6 +32,37 @@ a fidelity report.
 - Text extracted but no section headings found at all → **CANNOT VERIFY**. Stop.
 - Partial: some sections legible, others empty → continue, and record each unreadable section as
   `not assessed — unreadable`, never as a failure.
+
+### 1b — Scope
+
+    python3 tools/check_scope.py <sheet.salus.md>     # the scope gate; exit 2 means stop
+
+Read the sheet's own declaration of the standard it was **compiled to** — suppliers put it on the
+first line, in the header, or in Section 15.
+
+- **It declares a standard from a third regime — GB/T 16483, JIS Z 7253, GOST 30333, SOR/2015-17
+  and the like — and declares neither 2020/878 nor 1910.1200** → **CANNOT VERIFY**, reason: out of
+  scope. **Stop.** Name the standard the sheet declares, say that `reference/` does not ship it,
+  and make no judgement about the sheet in its own regime. Run no further stages.
+- It declares a third regime **and** the configured standard → continue. A sheet written for two
+  markets is audited against the configured one, and the third declaration is not a finding.
+- It declares the *other* standard this folder ships — a US sheet under `jurisdiction: EU`, or the
+  reverse → continue. That is Stage 3's business and it is a finding there, not a stop: both
+  rulebooks are here, so the comparison is real and says something useful.
+- It declares nothing → continue. Stage 3 infers the revision from the issue date and says so.
+
+Why this stops the run rather than becoming a finding: an auditor that does not hold the standard a
+document was written to cannot say whether the document meets it. Measuring it against a different
+standard yields one observation — the wrong ruler was used — restated once per provision, which
+reads like a list of defects and is not one. This gate exists because exactly that was filed here
+on 2026-09-11, before it existed. See `README.md` § *An incident, and the gate it produced*, and
+the two runs in `audits/` that record it.
+
+The stop is evidence-based, and only evidence-based: it fires on what the sheet **declares**, never
+on a country name, an address, a language, an emergency telephone number or a chemical inventory
+list. A sheet that tells a German reader its components appear on China's IECSC inventory is an EU
+sheet with an inventory paragraph. Adding a regime to the gate's list is a deliberate edit to
+`tools/check_scope.py`, and making a sheet pass by deleting one is forbidden outright.
 
 ## Stage 2 — Age gate *(house policy, not a provision)*
 
@@ -213,8 +249,12 @@ Run all three. A report that has not passed them has not been produced.
 
     python3 tools/test_docs_example.py               # gate 0: does this file still teach a shape that ships
     python3 tools/verify_conversion.py <sheet.pdf>   # gate 1: is the conversion faithful
+    python3 tools/check_scope.py <sheet.salus.md>    # the scope gate: is there a rulebook for this sheet
     python3 tools/verify_citations.py <report.md>    # gate 2: does every citation exist and match
     python3 tools/validate_report.py <report.md>     # gate 3: verdict shape and the hard boundaries
+
+The scope gate is the odd one out and runs at Stage 1b, not here: it guards the run rather than the
+report, and it is the only check that can end an audit before it starts.
 
 Gate 3 is the one that catches you. It scans the report for permission language in English and
 Russian and voids the run if it finds any. Run these as cold subagents with no knowledge of how

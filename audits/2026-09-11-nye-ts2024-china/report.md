@@ -1,5 +1,29 @@
 # Salus audit report
 
+> ## RETRACTED — this run should never have been performed
+>
+> **Filed 2026-09-11. Retracted the same day.** This sheet declares on its first line that it was
+> compiled to the Chinese national standards GB/T 16483 and GB/T 17519, and it declares neither
+> standard that Salus ships. The run should have stopped at Stage 1 of `rules.md` and said so. It
+> did not: it applied Annex II to a document written to a different rulebook and produced eleven
+> findings, which are one observation — the wrong ruler was used — counted eleven times.
+>
+> Nothing below is withdrawn as a *reading* of the text; the quotations are accurate and the gates
+> passed. What is withdrawn is the standing of the whole document. A comparison against a standard
+> the sheet was never written to is not an audit, and eleven findings dressed as compliance defects
+> overstate what this folder can honestly say.
+>
+> **The run as it should have gone** is filed beside this one, in
+> `audits/2026-09-11-nye-ts2024-china-scope-stop/`: the scope stop, with no findings at all.
+>
+> **What changed because of it.** `tools/check_scope.py` now exists and exits 2 on this sheet;
+> `rules.md` Stage 1 carries the stop condition; `identity.md` states the two regimes as scope.
+> The incident is written up in `README.md` § *An incident, and the gate it produced*.
+>
+> This report is kept, unedited below this notice, because deleting the evidence of a bad run is
+> the one thing an auditor may never do.
+
+
 | | |
 | --- | --- |
 | Sheet | `SDS_CHINA_English_TS+2024.pdf` — TS 2024, SDS No TS2024, Version 01, Nye Lubricants, Inc., A Member of the FUCHS Group |

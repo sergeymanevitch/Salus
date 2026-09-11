@@ -23,7 +23,7 @@ Three verdicts, and no fourth:
 | --- | --- |
 | **CONFORMS** | the sheet met the standard on every point checked, and the report lists those points |
 | **DOES NOT CONFORM** | the sheet failed, and the report lists each failure with the provision it breaks |
-| **CANNOT VERIFY** | the sheet could not be read — this is **not** a failure, and no provision was applied |
+| **CANNOT VERIFY** | the sheet could not be read, **or** it was compiled to a standard this folder does not ship — this is **not** a failure, and no provision was applied |
 
 Every finding looks like this. Five parts, all of them required:
 
@@ -61,6 +61,10 @@ writing that no law requires it.
   It checks whether the sheet agrees with itself and with the standard.
 - **No legal opinion, and no clearance.** CONFORMS covers the points listed, on one date. What
   happens to the sheet next belongs to the specialists it goes to.
+- **No third-regime audits.** Salus holds EU 2020/878 and US 29 CFR 1910.1200 and nothing else. A
+  sheet compiled to GB/T 16483, JIS Z 7253, GOST 30333 or SOR/2015-17 stops at the scope gate with
+  CANNOT VERIFY. It is not audited against the configured standard and scored against obligations
+  it was never written to — see *An incident, and the gate it produced* below.
 - **No OCR.** A scanned sheet gets CANNOT VERIFY rather than a guess.
 
 ## Where it runs, and what each surface costs you
@@ -76,6 +80,7 @@ that implies it is equally strong everywhere.
 | The seven stages, the finding format, the severity ladder | yes | yes |
 | Line-anchored rendering and its fidelity evidence (`extract.py`) | yes | **no** — you supply the text, and nothing proves what it lost |
 | **Gate 1** — conversion fidelity, two independent engines | yes | **no** |
+| **The scope gate** — is the sheet's own standard one this folder holds | yes | **no** — `rules.md` Stage 1b still says to stop, but nothing enforces it, and this is the check whose absence filed a retracted run |
 | **Gate 2** — every citation checked against the file it names | yes | **no** |
 | **Gate 3** — verdict shape, and the ban on saying anything about the material | yes | **no** — the boundary is prose, and prose is not enforcement |
 
@@ -89,6 +94,11 @@ is guarded exactly as if it had been written there:
 
     python3 tools/verify_citations.py <report.md>
     python3 tools/validate_report.py  <report.md>
+
+The scope gate is recoverable in the other direction: it reads the sheet, not the report, so it can
+be run before or after the fact on any rendering — and where no shell is available, `rules.md`
+Stage 1b is the instruction to perform it by eye. Read the sheet's first page and Section 15 for a
+declaration of the standard it was compiled to, and if that standard is not in `reference/`, stop.
 
 Gate 1 is the one that cannot be recovered afterwards, because it is a claim about a conversion
 that already happened somewhere else. Where no shell ran `extract.py`, the report should say so:
@@ -114,6 +124,9 @@ python3 tools/extract.py "test-cases/sds/BG - HCF MSDS 510231_UK_EN.pdf" --outdi
 python3 tools/verify_conversion.py "test-cases/sds/BG - HCF MSDS 510231_UK_EN.pdf" \
         --outdir audits/my-run
 
+# 3b. is there a rulebook here for this sheet at all? exit 2 means stop, do not audit
+python3 tools/check_scope.py "audits/my-run/BG - HCF MSDS 510231_UK_EN.salus.md"
+
 # 4. audit: hand rules.md and the rendering to your AI tool, or follow rules.md yourself.
 #    Write the result to audits/my-run/report.md
 
@@ -122,7 +135,7 @@ python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
 
-Seven finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
+Eight finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
 renderings and fidelity reports they used. `examples.md` walks through five of them in detail.
 
 Optional, when there is a network:
@@ -153,7 +166,8 @@ they need a terminal; if you are reading this inside a Claude project, see *Wher
 
 ## How it works
 
-One sheet in, one verdict out. Nothing reaches a reader until three gates pass.
+One sheet in, one verdict out. Two things can end a run before it starts — an unreadable sheet and
+a sheet written to a standard that is not here — and nothing reaches a reader until three gates pass.
 
 ```mermaid
 flowchart TD
@@ -163,7 +177,9 @@ flowchart TD
     S1 --> G1{"Gate 1 · fidelity"}
     G1 -->|no text layer| CV
     G1 -->|identifier lost| VOID["VOID · not delivered"]
-    G1 -->|ok| S2["Stage 2 · age gate"]
+    G1 -->|ok| SC{"Stage 1b · scope gate"}
+    SC -->|"declares GB/T, JIS, GOST…"| CV
+    SC -->|EU or US, or nothing declared| S2["Stage 2 · age gate"]
     S2 --> S3["Stage 3 · revision"]
     S3 --> S4["Stage 4 · structure"]
     S4 --> S5["Stage 5 · classification"]
@@ -257,6 +273,28 @@ run whenever there is a connection, writes what the publishers currently offer i
 confirmed current. A report read six months from now still says what the auditor knew when it was
 written.
 
+## The scope gate
+
+    python3 tools/check_scope.py <run>/<sheet>.salus.md      # exit 2 = out of scope, stop
+
+It runs once, after the conversion gate and before the audit, and it answers one question: does
+this folder hold the rulebook this sheet was written to? It reads the sheet's own declaration —
+suppliers put it on the first line, in the header, or in Section 15 — and compares it with what is
+in `reference/`.
+
+| What the sheet declares | What happens |
+| --- | --- |
+| the configured standard | the audit runs |
+| the *other* standard shipped here (a US sheet under `jurisdiction: EU`, or the reverse) | the audit runs, and Stage 3 reports the mismatch as a finding — both rulebooks are here, so the comparison rests on text |
+| a third regime **and** the configured standard — a sheet written for two markets | the audit runs against the configured one; the third declaration is not a finding |
+| a third regime and nothing else | **stop.** CANNOT VERIFY, out of scope, no findings |
+| nothing at all | the audit runs; Stage 3 infers the revision from the issue date and says it inferred it |
+
+It fires on declarations only — never on a country name, an address, a language, an emergency
+number or an inventory list. Two sheets in the corpus mention Canada's WHMIS and both are audited
+normally, because both also declare REACH. Across all twenty-four shipped sheets it stops exactly
+one.
+
 ## The three gates
 
 No report is produced until all three pass. They are scripts, so they do not depend on the
@@ -289,9 +327,46 @@ gates reject.
 **Gate 3** checks the verdict shape, that every finding declares whether it rests on a provision or
 on house policy, that blind spots are stated, and that no permission language survived.
 
+## An incident, and the gate it produced
+
+On 2026-09-11 a sheet was audited here that should never have been audited at all, and the folder
+had nothing in it that could say so.
+
+`SDS_CHINA_English_TS+2024.pdf` is a real supplier sheet — Nye Lubricants, a FUCHS Group company —
+for the Chinese market. Its first line reads *"Prepared in accordance with GB/T 16483 and GB/T
+17519"*, and its Section 15 lists the Chinese laws it conforms to. It declares neither EU 2020/878
+nor US 29 CFR 1910.1200. The run was made under `jurisdiction: EU`, so it was compared with Annex II
+from beginning to end, and it was filed as **DOES NOT CONFORM with eleven findings**.
+
+Every one of those findings was accurate as a reading of the text. All three gates passed on it. It
+was still wrong, and wrong in the way that matters most for a compliance tool: the eleven findings
+are not eleven defects, they are **one observation — the wrong ruler was used — restated once per
+provision**. A reader cannot tell that list apart from a list of real defects, and the document is
+not defective. It is a competent sheet written to a standard this folder does not hold.
+
+Nothing in the folder caught it. `config/jurisdiction.md` explicitly *instructed* the behaviour: it
+said a sheet compiled for another regime is audited against the configured one and the mismatch
+reported as a finding. That rule was written with the EU↔US crossing in mind, where both rulebooks
+ship and the comparison means something. Extended to a third regime it produces a confident
+verdict with nothing underneath it.
+
+**What changed, the same day:**
+
+| | |
+| --- | --- |
+| `tools/check_scope.py` | new. The scope gate, above. Exits 2 on this sheet, naming both declarations and the line each sits on |
+| `rules.md` Stage 1b | the stop condition, in the contract the auditor actually follows |
+| `identity.md` | the two standards are stated as *scope*, and CANNOT VERIFY now covers "no rulebook here for this", not only "cannot read this" |
+| `config/jurisdiction.md` | the rule that caused it is corrected, and the difference between the EU↔US crossing and a third regime is spelled out |
+| `audits/2026-09-11-nye-ts2024-china/` | **retracted**, kept in place, with a notice at its head saying what it was and what it should have been |
+| `audits/2026-09-11-nye-ts2024-china-scope-stop/` | the run as it should have gone: the stop, no findings, and an explicit statement that Salus makes no judgement about the sheet in its own regime |
+
+The bad run is kept rather than deleted. An auditor that quietly removes the evidence of its own
+bad run has disqualified itself from asking anyone else not to.
+
 ## Claims written to be falsified
 
-Five claims, each with the command that breaks it. If any of them does not behave as described,
+Six claims, each with the command that breaks it. If any of them does not behave as described,
 the tool is wrong and the claim should be disbelieved. Three of the five are stated in two parts —
 what the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
@@ -351,6 +426,25 @@ only the defects it never had is not being audited.
    carrying only the latter satisfied both, and the five required parts were enforced as four. The
    part that went missing was the one a reader cannot reconstruct from the standard.
 
+6. **"A sheet written to a standard that is not here stops the run, and a report that only lists
+   failures does not pass."**
+   Two commands, one for each half:
+
+       python3 tools/check_scope.py \
+           audits/2026-09-11-nye-ts2024-china-scope-stop/SDS_CHINA_English_TS+2024.salus.md
+       echo "exit $?"        # 2 — out of scope, China, GB/T 16483 and GB/T 17519, line 2
+
+   Run it over the rendering of every other run in `audits/` and each exits 0 — the two China
+   folders hold the same sheet, and both stop. Then
+   take a copy of any report, delete its `[P-n]` blocks, and run Gate 3: it fails, whatever the
+   verdict. Replace them with a bare `- [P-01] looked fine` bullet and it fails again — a pass is
+   written the way a finding is written or it does not count.
+
+   *Until both were fixed, neither held.* A GB/T sheet was audited against Annex II and filed with
+   eleven findings; see *An incident, and the gate it produced*. And passes were demanded only of a
+   CONFORMS report, so a DOES NOT CONFORM report listing nothing but failures satisfied the gate —
+   the thing this tool is least allowed to be, which is a critique.
+
 ## Rebuilding everything from source
 
     python3 tools/build_reference.py      # re-download the three standards and regenerate reference/
@@ -382,9 +476,9 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the three gates, the docs gate, the reference builder, freshness
+    tools/          extraction, the scope gate, the three gates, the docs gate, builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
-    audits/         seven worked runs, with the renderings and fidelity reports they used
+    audits/         eight worked runs, with the renderings and fidelity reports they used
 
 `README.md` is the only file of its kind, and it is this one — it addresses the person using or
 judging the folder. Every other folder states its own contract in a `CONTEXT.md`: what it holds,

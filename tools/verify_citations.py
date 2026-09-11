@@ -71,7 +71,7 @@ def split_findings(text):
 
 
 def field(block, name):
-    """Pull one named part out of a finding block.
+    r"""Pull one named part out of a finding block.
 
     WHERE and WHERE IN THE STANDARD are different parts and one is a prefix of the other, so
     `^\s*WHERE\b` matches the heading of BOTH - \b sits happily in the space before "IN". Left

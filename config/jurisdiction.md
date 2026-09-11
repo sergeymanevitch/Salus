@@ -24,9 +24,20 @@ Employment is, and only the person filling in this file knows it.
 | `EU` | Commission Regulation (EU) 2020/878, with CLP Annex VI for classification |
 | `US` | 29 CFR 1910.1200 |
 
-A sheet compiled for the other regime is still audited against the configured one, and the
-mismatch is reported as a finding — that is the useful answer, because a US-format sheet does not
-satisfy an EU obligation however well it is written.
+A sheet compiled for **the other regime Salus ships** is still audited against the configured one,
+and the mismatch is reported as a finding — that is the useful answer, because a US-format sheet
+does not satisfy an EU obligation however well it is written, and both rulebooks are in
+`reference/` so the comparison rests on text.
+
+A sheet compiled to **a standard Salus does not ship** — GB/T 16483, JIS Z 7253, GOST 30333,
+SOR/2015-17 — is a different case and is **not** audited at all. The run stops at Stage 1b of
+`rules.md` with CANNOT VERIFY, out of scope. Setting `jurisdiction` does not make a third regime
+auditable: it selects between the two standards that are here, and there is no third value.
+
+The distinction is not pedantry. Auditing a GB/T sheet against Annex II produces one observation —
+the wrong ruler was used — restated once per provision, and a reader cannot tell that list from a
+list of real defects. It happened here on 2026-09-11; `README.md` § *An incident, and the gate it
+produced* records it.
 
 ## `policy_max_age_years`
 

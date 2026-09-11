@@ -1,8 +1,9 @@
 # tools/ — what runs, and when
 
-Seven scripts, four jobs. Nothing here decides anything about a sheet: the audit is the reading, and
-these are the machinery around it — one that prepares the sheet, three that guard the answer, one
-that holds the documentation to the format it teaches, and two that keep the standards current.
+Eight scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
+exception, and it is the exception that ends runs: the scope gate decides whether this folder holds
+a rulebook for the sheet at all. Around that: one script prepares the sheet, three guard the answer,
+one holds the documentation to the format it teaches, and two keep the standards current.
 
 ## Run for every audit, in this order
 
@@ -10,9 +11,17 @@ that holds the documentation to the format it teaches, and two that keep the sta
 | --- | --- | --- | --- |
 | 1 | `extract.py` | turn the PDF into the line-anchored rendering the auditor reads, and write the evidence that nothing was lost | never — it reports, it does not gate |
 | 2 | `verify_conversion.py` | **Gate 1** · re-derive that evidence from the PDF and the rendering on disk, rather than trusting the JSON | a chemical identifier is missing, or the rendering is no longer the extraction |
-| 3 | *the audit itself* | `rules.md` Stages 2–6 — a person or a model, not a script | — |
-| 4 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names | the report and the standard disagree |
-| 5 | `validate_report.py` | **Gate 3** · verdict shape, finding class, declared blind spots, and the ban on permission language | any of those, in English or Russian |
+| 3 | `check_scope.py` | **the scope gate** · does this folder hold the standard the sheet was compiled to? Reads the sheet's own declaration | the sheet declares a third regime — GB/T, JIS, GOST, SOR/2015-17 — and not the configured one. Exit 2: the verdict is CANNOT VERIFY, out of scope, and **no further stage runs** |
+| 4 | *the audit itself* | `rules.md` Stages 2–6 — a person or a model, not a script | — |
+| 5 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names | the report and the standard disagree |
+| 6 | `validate_report.py` | **Gate 3** · verdict shape, finding class, declared blind spots, the ban on permission language, and that a report which performed checks says what passed | any of those, in English or Russian |
+
+The scope gate is third in the order and first in consequence: it is the only script here that can
+end a run before it begins. It exists because on 2026-09-11 a sheet compiled to GB/T 16483 was
+audited against Annex II from beginning to end and filed with eleven findings — accurate readings,
+all of them, of a document that had never been written to that standard. `README.md` § *An incident,
+and the gate it produced* has the whole story; `audits/2026-09-11-nye-ts2024-china/` is the retracted
+run and the folder beside it is the same sheet done correctly.
 
 Gate 2 is the one that matters most and is the easiest to get wrong. It reads the **report**. A
 checker that only re-reads the standard proves the standard has not moved; it would pass a report

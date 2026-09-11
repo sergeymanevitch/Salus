@@ -26,10 +26,13 @@ It is a working set, not a curated one, and the awkwardness is the point:
 - one sheet is compiled to **neither standard this folder ships**. `SDS_CHINA_English_TS+2024.pdf`
   — Nye Lubricants' TS 2024, a lubricating oil — states on its first page that it was *"prepared in
   accordance with GB/T 16483 and GB/T 17519"*, the Chinese national standards. Those are not in
-  `reference/` and so cannot be cited. `rules.md` Stage 3 names the crossing between EU and US and
-  what to do about it; it does not name a third regime, and this sheet is the corpus's open question
-  rather than a solved case. It is kept because an auditor that has only ever seen the two regimes
-  it ships does not know what it is looking at when a third arrives.
+  `reference/` and so cannot be cited. **This sheet is why the scope gate exists.** It was first
+  audited against Annex II from beginning to end and filed with eleven findings; that run is
+  retracted, the correct one is filed beside it, and `tools/check_scope.py` now exits 2 on this
+  file. `rules.md` Stage 1b carries the rule, and `README.md` § *An incident, and the gate it
+  produced* carries the story. It is kept in the corpus because an auditor that has only ever seen
+  the two regimes it ships does not know what it is looking at when a third arrives — and because
+  this sheet is now the fixture that proves the gate fires.
 
 The rows in `reference/eu-clp-annex-vi/annex-vi-table-3-extract.md` are selected by the identifiers
 **these** sheets cite — the count is in that file's own header, where it is generated rather than
