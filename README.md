@@ -8,6 +8,117 @@ It never says whether the material is safe.
 
 ---
 
+## How it works
+
+One sheet in, one verdict out, through seven stages and three gates. Nothing reaches a reader
+until all three gates pass.
+
+```mermaid
+flowchart TD
+    SDS["Safety data sheet<br/>one PDF at a time"]
+
+    subgraph SETUP["Stage 0 · settings, read before the sheet"]
+        CFG["config/jurisdiction.md<br/>EU or US · house age gate · run date"]
+        Q0{"jurisdiction set?"}
+    end
+
+    subgraph CONV["Stage 1 · conversion and legibility"]
+        EX["tools/extract.py<br/>poppler pdftotext, primary"]
+        EX2["pypdf, independent second engine"]
+        REND["sheet.salus.md<br/>line-anchored rendering the auditor reads"]
+        FID["sheet.fidelity.json<br/>the evidence it lost nothing"]
+        G1{"GATE 1<br/>tools/verify_conversion.py<br/>every character, token and<br/>identifier present in both?"}
+    end
+
+    subgraph AUDIT["Stages 2 to 6 · the audit itself"]
+        S2["Stage 2 · age gate<br/>issue date vs house policy<br/>HOUSE POLICY, carries no provision"]
+        S3["Stage 3 · which revision<br/>the sheet declares, against the ledger dates"]
+        S4["Stage 4 · structure<br/>16 sections present, numbered, in order, populated"]
+        S5["Stage 5 · classification<br/>each Section 3 ingredient vs CLP Annex VI"]
+        S6["Stage 6 · internal consistency<br/>flash point, concentrations, H-codes,<br/>storage, emergency contact"]
+    end
+
+    subgraph REF["reference/ · the standards, as text, offline"]
+        EU["eu-2020-878/<br/>Regulation EU 2020/878<br/>Annex II, all 16 sections"]
+        USA["us-osha-hcs/<br/>29 CFR 1910.1200<br/>with appendices A to D"]
+        CLP["eu-clp-annex-vi/<br/>Part 1 Notes + Table 3 rows,<br/>keyed by CAS and Index number"]
+        LED["STANDARDS-LEDGER.md<br/>published · applies from · transition ends"]
+        LOG["FRESHNESS-LOG.md<br/>what was true, and when it was last checked"]
+    end
+
+    subgraph MAINT["Maintenance · needs a network, the audit does not"]
+        BUILD["tools/build_reference.py<br/>re-download and regenerate, with SHA-256 provenance"]
+        FRESH["tools/check_freshness.py<br/>is the held revision still the one in force?"]
+    end
+
+    subgraph OUT["Report and the gates that guard it"]
+        REP["report.md<br/>findings, passes, declared blind spots"]
+        G2{"GATE 2<br/>tools/verify_citations.py<br/>reads the REPORT: does every quoted<br/>provision exist in the file it names?"}
+        G3{"GATE 3<br/>tools/validate_report.py<br/>verdict shape, finding class,<br/>no permission language"}
+    end
+
+    V1["CONFORMS<br/>on every point checked"]
+    V2["DOES NOT CONFORM<br/>findings, each citing its provision"]
+    V3["CANNOT VERIFY<br/>could not establish what was being checked"]
+    VOID["Run void — fix and re-run.<br/>Nothing is delivered."]
+
+    SDS --> CFG --> Q0
+    Q0 -- "no" --> V3
+    Q0 -- "yes" --> EX
+    EX --> REND
+    EX --> EX2
+    EX2 --> FID
+    REND --> FID
+    FID --> G1
+    G1 -- "no text layer" --> V3
+    G1 -- "identifier lost" --> VOID
+    G1 -- "pass or review" --> S2
+
+    S2 --> S3 --> S4 --> S5 --> S6 --> REP
+
+    LED -. "three dates decide<br/>stale vs still in transition" .-> S3
+    LOG -. "how old this knowledge is" .-> S3
+    EU -. "Annex II requirements" .-> S4
+    USA -. "1910.1200 g 2, g 3, g 5" .-> S4
+    CLP -. "one row per CAS or Index,<br/>never the whole table" .-> S5
+    EU -. "section content rules" .-> S6
+
+    BUILD --> EU
+    BUILD --> USA
+    BUILD --> CLP
+    FRESH --> LOG
+    FRESH -. "reports drift, never edits" .-> LED
+
+    REP --> G2
+    G2 -- "quote not in the standard" --> VOID
+    G2 -- "citations hold" --> G3
+    G3 -- "boundary breach" --> VOID
+    G3 -- "clean, no findings" --> V1
+    G3 -- "clean, findings present" --> V2
+
+    classDef verdict fill:#0b3d2e,stroke:#7fd1ae,color:#eafff5,stroke-width:2px
+    classDef bad fill:#4a1420,stroke:#ff9db0,color:#ffe9ee,stroke-width:2px
+    classDef gate fill:#12314f,stroke:#7fb6f0,color:#eaf4ff,stroke-width:2px
+    classDef store fill:#3a2f12,stroke:#e0c268,color:#fff6df
+    class V1,V2,V3 verdict
+    class VOID bad
+    class G1,G2,G3,Q0 gate
+    class EU,USA,CLP,LED,LOG store
+```
+
+**Reading it.** The left-to-right spine is one audit. The yellow boxes are `reference/`, and the
+dotted lines are the only way a stage touches them — always a targeted read, never the whole file,
+which is what keeps a run at a few thousand tokens rather than forty. The blue diamonds are the
+gates; each one can send the run to *void*, and a void run is not delivered. `CANNOT VERIFY` is
+reached only from the two places where Salus cannot establish what it is looking at, and it is a
+verdict, not a failure.
+
+The two maintenance scripts sit apart on purpose: they are the only things that need a network, and
+an audit never calls them. That is why the folder works on a plane, and why it still knows how old
+its own knowledge is.
+
+---
+
 ## Three ways in
 
 **You review safety data sheets for a living.** Start at `config/jurisdiction.md` — set `EU` or
