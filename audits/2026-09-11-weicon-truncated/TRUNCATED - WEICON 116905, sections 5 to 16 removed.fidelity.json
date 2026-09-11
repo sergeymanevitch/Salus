@@ -1,0 +1,64 @@
+{
+  "sheet": "TRUNCATED - WEICON 116905, sections 5 to 16 removed.pdf",
+  "sheet_sha256": "3c1f7dd7b3472a33b507c72449f6c791b3aad901784d66b49280420cb2e3682f",
+  "sheet_bytes": 143268,
+  "extracted_utc": "2026-09-11T14:52:07Z",
+  "rendering": "TRUNCATED - WEICON 116905, sections 5 to 16 removed.salus.md",
+  "rendering_sha256": "d74dfdcb63dd14eb1989104b666e7689c7199a159325c6f0dfb7d231cf0ea8f4",
+  "primary_engine": "poppler pdftotext -layout",
+  "secondary_engine": "pypdf",
+  "roundtrip_identical": true,
+  "chars_primary": 8520,
+  "pages": 5,
+  "page_density": [
+    {
+      "page": 1,
+      "chars_poppler": 1550,
+      "chars_pypdf": 1550,
+      "flag": ""
+    },
+    {
+      "page": 2,
+      "chars_poppler": 2095,
+      "chars_pypdf": 2095,
+      "flag": ""
+    },
+    {
+      "page": 3,
+      "chars_poppler": 1998,
+      "chars_pypdf": 1998,
+      "flag": ""
+    },
+    {
+      "page": 4,
+      "chars_poppler": 2877,
+      "chars_pypdf": 2877,
+      "flag": ""
+    },
+    {
+      "page": 5,
+      "chars_poppler": 0,
+      "chars_pypdf": 0,
+      "flag": "no extractable text"
+    }
+  ],
+  "distinct_tokens_primary": 538,
+  "distinct_tokens_secondary": 541,
+  "coverage_of_secondary_by_shipped": 0.998152,
+  "identifiers_primary": 44,
+  "identifiers_secondary": 41,
+  "lost_identifiers": [],
+  "lost_characters": [],
+  "lost_tokens": [
+    "sheetproduct"
+  ],
+  "tokens_only_in_shipped": [],
+  "method_note": "The comparison is by COVERAGE, not by count. The two engines legitimately differ on how many times a repeated page header appears and in what order a label and its value are emitted, and counting that as loss would bury the divergences that matter. What is asserted is that nothing PRESENT in the independent extraction is ABSENT from what ships: every distinct character, every distinct word or number token, and every chemical identifier and hazard code.",
+  "verdict": "REVIEW",
+  "detail": "No identifier was lost, but 1 distinct token(s) and 0 distinct character(s) appear in the independent extraction and not in the shipped rendering. Coverage is 99.8152%. A person must read lost_tokens before this conversion is used in an audit.",
+  "limits": [
+    "Two engines missing the same content agree and are wrong together. Text that exists only as an image is the usual case; see page_density for pages with little extractable text.",
+    "Reading order in multi-column layouts is the primary engine's, and is not independently verified.",
+    "Visual structure - which cell a value sat in, which column a heading spanned - is not reconstructed. The rendering preserves the layout the primary engine produced, and the original PDF ships beside it so a reader can compare."
+  ]
+}

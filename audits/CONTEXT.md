@@ -14,15 +14,17 @@ whole reason the rendering ships beside the report rather than being regenerated
 reader six months from now opens the same file the auditor opened, not a new extraction from a
 newer version of a tool.
 
-## The three runs here
+## The five runs here
 
-| Run | Verdict | What it is for |
-| --- | --- | --- |
-| `2026-09-11-bg-hcf` | DOES NOT CONFORM | four findings and two passes; the one to read if you want to see how a finding cites a provision. Its conversion gate returned REVIEW, not PASS, and the report says so twice |
-| `2026-09-11-dowsil-ap` | CONFORMS | six checks, all passed; shows that an audit reports what held, not only what broke |
-| `2026-09-11-scanned-fixture` | CANNOT VERIFY | stops at Stage 1 and cites no provision at all, because none was applied |
+| Run | Regime | Verdict | What it is for |
+| --- | --- | --- | --- |
+| `2026-09-11-bg-hcf` | EU | DOES NOT CONFORM | four findings and two passes; the one to read to see how a finding cites a provision. Its conversion gate returned REVIEW, not PASS, and the report says so twice |
+| `2026-09-11-dowsil-ap` | EU | CONFORMS | six checks, all passed; an audit reports what held, not only what broke |
+| `2026-09-11-carboguard-us` | US | DOES NOT CONFORM | the US path. A smaller audit than the EU ones, because 1910.1200 publishes less that can be cited — and the report says which claims it is not making |
+| `2026-09-11-weicon-truncated` | EU | DOES NOT CONFORM | incomplete is not unreadable. Four of sixteen sections, perfectly legible; the document's own pagination is the evidence |
+| `2026-09-11-scanned-fixture` | — | CANNOT VERIFY | stops at Stage 1 and cites no provision at all, because none was applied |
 
-All three are EU runs. The US path is implemented and not yet exercised end to end.
+The last two sit either side of the line that is easiest to get wrong under pressure.
 
 ## Before a run is added here
 

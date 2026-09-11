@@ -89,8 +89,8 @@ python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
 
-Three finished runs are already in `audits/`, one per verdict, with the renderings and fidelity
-reports they used. `examples.md` walks through all three.
+Five finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
+renderings and fidelity reports they used. `examples.md` walks through all five.
 
 Optional, when there is a network:
 
@@ -105,6 +105,7 @@ Everything below can be checked without trusting a word of this file.
 
 1. **Open any finding and follow its citation.** `examples.md` → a finding → the file named in
    `WHERE IN THE STANDARD` → the provision, as text, in `reference/`. Not a link, not a summary.
+   Five runs are shipped: three EU, one US, and one that could not be read at all.
 2. **Make the checker disagree with the report.** See *Claims written to be falsified* below: tamper
    with one character of a quoted provision and watch `verify_citations.py` fail by name.
 3. **Try to make it approve a material.** Append `This material is safe to use.` to a report and run
@@ -193,13 +194,11 @@ Israeli REACH variant. They are what Salus was built against and what every clai
 on. They are not decoration: the rows in `reference/eu-clp-annex-vi/` are selected by the
 identifiers these sheets actually cite.
 
-**The three shipped runs in `audits/` are all EU.** The US path is implemented and documented but
-has not been exercised end to end, though the corpus holds US-format sheets — two Carboline
-`USANSI` variants and the Chevron sheet. Said here rather than left for a reader to discover.
-
-`test-cases/sds-constructed/` holds one file that is **not** a manufacturer's sheet: a real sheet
-rasterised into an image so the CANNOT VERIFY path has a fixture instead of a description. The
-folder's own README records exactly how it was made, so nobody mistakes it for a real document.
+`test-cases/sds-constructed/` holds two files that are **not** sheets as a supplier issued them: a real sheet rasterised
+into an image, so the CANNOT VERIFY path has a fixture instead of a description; and a real,
+current sheet cut down to its first four pages of twenty, which tests the line between *unreadable*
+and *incomplete* — those are different verdicts and only one of them is a failure. The folder's own
+README records exactly how each was made, so neither is mistaken for a supplier's document.
 
 ## The standards, and the calendar
 
@@ -317,4 +316,4 @@ summary.
     config/         jurisdiction and house policy — fill this in before the first run
     tools/          extraction, the three gates, the reference builder, the freshness check
     test-cases/     21 real manufacturer sheets, and one constructed fixture kept apart
-    audits/         the three worked runs, with the renderings and fidelity reports they used
+    audits/         five worked runs, with the renderings and fidelity reports they used

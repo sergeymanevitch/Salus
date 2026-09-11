@@ -1,8 +1,17 @@
 # Worked audits
 
-Three sheets, three verdicts, one of each. Every one is a real run against the standards in
-`reference/`, and each is shipped in full under `audits/` with the rendering the auditor read and
-the fidelity report for that rendering, so any finding here can be opened and disagreed with.
+Five runs: both jurisdictions, all three verdicts, and the two edges where a verdict is easy to get
+wrong. Every one is a real run against the standards in `reference/`, and each is shipped in full
+under `audits/` with the rendering the auditor read and the fidelity report for that rendering, so
+any finding here can be opened and disagreed with.
+
+| Run | Regime | Verdict | Why it is here |
+| --- | --- | --- | --- |
+| BG HCF | EU | DOES NOT CONFORM | how a finding cites a provision |
+| DOWSIL AP | EU | CONFORMS | an audit reports what held, not only what broke |
+| Carboguard 890 | **US** | DOES NOT CONFORM | the US path, and how much smaller it is |
+| WEICON truncated | EU | DOES NOT CONFORM | incomplete is not the same as unreadable |
+| scanned fixture | — | CANNOT VERIFY | what the auditor does when it cannot read |
 
 The findings are abridged below. The full reports carry every citation.
 
@@ -104,15 +113,75 @@ be recorded as such.
 
 ---
 
-## What these three are meant to teach
+## 4. DOES NOT CONFORM, on the US path — `CARBOLINE - Carboguard_890 - 0986A1NL_2_USANSI.pdf`
 
+A coating sheet prepared under HCS 29 CFR 1910.1200, revised March 2019. Two findings, three
+passes. Full report: `audits/2026-09-11-carboguard-us/report.md`.
+
+**[F-01] Section 16 carries no date of preparation or last revision.** The date exists — *"Revision
+Date: 03/25/2019"* — but in the running page header, not in the section the standard sends a reader
+to. § 1910.1200(g)(2)(xvi) names it as content *of section 16*.
+
+**[P-02] Subheadings with nothing to report are marked rather than left blank** — *"Odor threshold
+Not Determined"*, *"Reasons for revision / No Information"*. This is § 1910.1200(g)(3), and it is
+the provision an otherwise complete sheet most often fails, because a blank line and a line reading
+"not determined" look equally tidy and only one of them complies.
+
+**Noted, not a finding: the sheet may lawfully follow the pre-2024 text, and does.** Revised before
+the 2024 rewrite took effect. § 1910.1200(j)(4) allows either text during the transition, and for
+**mixtures** § 1910.1200(j)(3)(i) does not close the window until **2027-11-19**. Reporting this as
+non-compliance today would be a false finding. It becomes a real one in fourteen months.
+
+> **The US run is a much smaller audit, and the report says so out loud.** There is no harmonised
+> classification list in 1910.1200 — the standard requires the preparer to classify and does not
+> publish a table of correct answers. CLP Annex VI would give one, but it is EU law and does not
+> govern this sheet, so Salus does not open it. Thirteen ingredients, including titanium dioxide at
+> 25–<50 %, are recorded as **not assessed for classification correctness**. Two further limits bite
+> here too: Appendix D's Table D.1 and Appendix B's Table B.6.1 are both published as *graphics*, so
+> per-subheading content and flammable-liquid categories are not citable at all. [P-03] checks the
+> flash point against the definition of a flammable liquid and states plainly that it could not
+> check the category number.
+
+## 5. DOES NOT CONFORM, not CANNOT VERIFY — `TRUNCATED - WEICON 116905`
+
+Pages 1–4 of a real, current twenty-page WEICON sheet. Sections 1 to 4 only.
+Full report: `audits/2026-09-11-weicon-truncated/report.md`.
+
+This fixture exists to test one line that is easy to state and easy to get wrong under pressure.
+Every word of the four pages is legible; the conversion gate passed it with one divergent token and
+no lost identifier. Salus could establish exactly what it was looking at — and it was a document
+missing three quarters of itself.
+
+**That is a failure, not an inability.** `CANNOT VERIFY` would have been the comfortable answer, and
+it would have filed a real defect under *the auditor had a problem*, which is how a defect gets
+lost. Compare run 3 above, where nothing could be read at all and no provision was applied.
+
+**[F-01]** twelve of the sixteen sections are absent, against *"The safety data sheet shall include
+the following 16 headings"* — among them Section 8 exposure controls and Section 9 physical
+properties, the two a person handling the product reaches for first.
+
+**[F-02] The document convicts itself.** Every footer reads `1/20`, `2/20`, `3/20`, `4/20`. The
+sheet states that it is twenty pages long and four are present — and subsection 0.3.2 requires that
+pagination *precisely so that an incomplete copy can be recognised as one*. A reader can check it in
+four seconds knowing nothing about the product.
+
+**[P-01]** is worth reading beside run 1: this sheet names the current revision, is seven months
+old, and clears every calendar check. What is wrong with it has nothing to do with age or revision.
+
+---
+
+## What these five are meant to teach
+
+0. **Jurisdiction changes what can be checked, not how hard it is checked.** Run 4 makes fewer
+   claims than run 1 because 1910.1200 publishes less that can be cited — and it says which claims
+   it is not making, and why, rather than reaching for an EU table that does not govern the sheet.
 1. **A finding names a provision, a revision, and a date.** Not one of the three is decoration.
    `[F-01]` turns on a date in an article; `[F-02]` turns on a row and a note in a revision that
    was rebuilt the day this was written; every citation says when it was last confirmed current.
-2. **A pass is part of the report.** Two of the three runs list what was checked and held. An audit
+2. **A pass is part of the report.** Four of the five runs list what was checked and held. An audit
    that only lists breakage is a complaint.
-3. **The auditor's limits go in the report, not in the small print.** Every one of the three
-   declares its blind spots, including on the run where they did not bite.
+3. **The auditor's limits go in the report, not in the small print.** Every one of the five
+   declares its blind spots, including on the runs where they did not bite.
 4. **Three verdicts and no fourth.** There is no score, no percentage, and nothing that could be
    read as permission to use a material. `tools/validate_report.py` enforces that over the text
    after the fact; see `README.md`.
