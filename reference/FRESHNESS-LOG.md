@@ -18,7 +18,7 @@ Last run: **2026-09-11**
 
 - held in `reference/`: `02008R1272-20260701`
 - checked: 2026-09-11
-- result: no newer consolidated version found
+- result: no newer consolidated version found (2 probe(s), all answered)
 - action: none
 
 ## US — 29 CFR 1910.1200

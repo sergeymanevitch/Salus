@@ -14,12 +14,20 @@
 The audit stopped at Stage 1 of `rules.md`. No provision was applied, no section was assessed, and
 nothing below is a statement about this document's compliance.
 
-**Reason.** The file opens and renders as two pages, and both are images. `pdftotext` returns one
+**Reason.** The file opens and renders as one page, and it is an image. `pdftotext` returns one
 character from the whole document and the independent engine returns none. There is no text layer.
 Salus could not establish *what it would be checking*, so it did not check anything.
 
 **Evidence.** `fidelity.json` for this run records `"verdict": "NO TEXT LAYER"`, `chars_primary: 0`,
-and a `page_density` entry flagging both pages as carrying no extractable text.
+and a `page_density` entry flagging its single page as carrying no extractable text.
+
+**Corrected 2026-09-11.** The two sentences above read *two pages* and *both pages* when this report
+was filed; the sheet has one page, and `pdfinfo` says so. The count came out of `fidelity.json`,
+which counted a page that does not exist: `pdftotext` ends every page with a form feed including the
+last, and `tools/extract.py` split on it without discarding the empty tail. The wrong count is the
+instrument's and the report repeated it. `tools/extract.py` is fixed, the fidelity report for this
+run is regenerated from the same PDF, and nothing else here moves — no finding on this run rested on
+the page count, and the verdict does not.
 
 **What this is not.** CANNOT VERIFY is not a failure and not a pass. A sheet that cannot be read is
 not thereby a defective sheet — this one is a rasterised copy of a perfectly ordinary Devcon sheet,

@@ -12,6 +12,19 @@ knowing nothing.
 
 It never edits STANDARDS-LEDGER.md. Deciding that a newly published revision is now in force is a
 legal reading, not a string comparison, and it belongs to a person.
+
+A PROBE THAT DID NOT GET AN ANSWER IS NOT AN ANSWER. This script once wrote "no newer consolidated
+version found" and `action: none` after every one of its probes had failed, because a dead network
+and a publisher saying "that version does not exist" both arrived here as an empty list. That line
+goes into FRESHNESS-LOG.md and `rules.md` Stage 3 requires a report to cite it, so the script would
+have been putting a claim it never established into a compliance record. Now a probe that gets no
+HTTP answer at all raises `Unreachable`, every target counts its failures, and a target with any
+failure is written down as UNREACHABLE — could not establish — rather than as a clean result.
+
+EXIT CODE. 0 when every target was reached and the log records a real answer. 1 when any target
+could not be reached: the log is still written, and it says UNREACHABLE, but the run did not
+establish what it set out to establish and must not be read as though it had. `--report` exits 0;
+it makes no claim of its own, it prints the one on record.
 """
 import argparse, datetime, json, os, re, sys, urllib.request, urllib.error
 
@@ -38,10 +51,18 @@ TARGETS = [
 ]
 
 
+class Unreachable(Exception):
+    """No HTTP answer at all. Deliberately distinct from an answer that says "not found": 404 is
+    the publisher telling us something, and a refused connection is the publisher telling us
+    nothing. Conflating the two is how this script came to report a silence as a confirmation."""
+
+
 def get(url, accept):
     """urllib first, curl as the fallback: an interpreter without a CA bundle must not be the
-    reason this folder stops being able to check whether its standards are current."""
+    reason this folder stops being able to check whether its standards are current. If neither
+    produces an HTTP status, that is Unreachable and the caller has to say so."""
     headers = {"User-Agent": "Salus/1.0", "Accept": accept, "Accept-Language": "eng"}
+    first = None
     try:
         req = urllib.request.Request(url, headers={**headers, "Accept-Encoding": "gzip"})
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -52,32 +73,42 @@ def get(url, accept):
             return r.status, data
     except urllib.error.HTTPError as e:
         return e.code, b""
-    except Exception:
-        import subprocess
-        hs = []
-        for k, v in headers.items():
-            hs += ["-H", f"{k}: {v}"]
+    except Exception as e:
+        first = f"{type(e).__name__}: {str(e)[:100]}"
+
+    import subprocess
+    hs = []
+    for k, v in headers.items():
+        hs += ["-H", f"{k}: {v}"]
+    try:
         r = subprocess.run(["curl", "-sS", "-L", "--compressed", "-m", "60",
                             "-w", "\n%{http_code}", *hs, url],
                            capture_output=True, timeout=120)
-        body = r.stdout
-        code = 0
-        if b"\n" in body:
-            body, tail = body.rsplit(b"\n", 1)
-            try:
-                code = int(tail.strip())
-            except ValueError:
-                code = 0
-        return code, body
+    except Exception as e:
+        raise Unreachable(f"urllib: {first}; curl: {type(e).__name__}") from e
+    body = r.stdout
+    code = 0
+    if b"\n" in body:
+        body, tail = body.rsplit(b"\n", 1)
+        try:
+            code = int(tail.strip())
+        except ValueError:
+            code = 0
+    if code == 0:
+        raise Unreachable(f"urllib: {first}; curl exit {r.returncode}: "
+                          f"{r.stderr.decode('utf-8', 'replace').strip()[:100]}")
+    return code, body
 
 
 def probe_consolidated(base_celex):
-    """Ask for consolidated versions dated after the one held. Cellar answers 404 for a
-    version that does not exist, which is the whole test."""
+    """Ask for consolidated versions dated after the one held. Cellar answers 404 for a version
+    that does not exist, which is the whole test — and that is exactly why a probe that gets no
+    answer cannot be folded in with one that does. Returns (found, failed, probed): an empty
+    `found` means "none exists" only when `failed` is zero."""
     stem = base_celex.split("-")[0]
     held = base_celex.split("-")[1]
     held_d = datetime.date(int(held[:4]), int(held[4:6]), int(held[6:]))
-    found = []
+    found, failed, probed = [], 0, 0
     d = held_d
     today = datetime.date.today()
     # consolidated versions start on the 1st or the 20th of a month; probe month starts
@@ -86,16 +117,19 @@ def probe_consolidated(base_celex):
         if d > today:
             break
         cand = f"{stem}-{d.strftime('%Y%m%d')}"
+        probed += 1
         try:
             st, _ = get(f"http://publications.europa.eu/resource/celex/{cand}",
                         "application/xhtml+xml")
-            if st == 200:
-                found.append(cand)
-        except urllib.error.HTTPError:
-            pass
         except Exception:
-            pass
-    return found
+            failed += 1
+            continue
+        if st == 200:
+            found.append(cand)
+        elif st != 404:
+            # neither "here it is" nor "it does not exist" — we have not been told either way
+            failed += 1
+    return found, failed, probed
 
 
 def main():
@@ -111,35 +145,48 @@ def main():
             print("No freshness log on record. Run this script with a connection at least once.")
         return 0
 
-    rows = []
+    NOT_ESTABLISHED = ("none possible now — this run did not establish whether a newer version "
+                       "exists; the ledger's last confirmed date stands and the audit must say so")
+
+    rows, unreached = [], 0
     for t in TARGETS:
         entry = {"standard": t["name"], "held": t["held"], "checked": today}
         try:
             if t.get("candidates"):
-                newer = probe_consolidated(t["held"])
+                newer, failed, probed = probe_consolidated(t["held"])
+                if failed:
+                    # The whole point of H10: an empty result list from failed probes is silence,
+                    # not a finding of "nothing newer". Never write it down as one.
+                    raise Unreachable(f"{failed} of {probed} probe(s) got no usable answer from "
+                                      f"the publisher")
                 entry["result"] = ("NEWER CONSOLIDATED VERSION EXISTS: " + ", ".join(newer)
-                                   if newer else "no newer consolidated version found")
+                                   if newer else
+                                   f"no newer consolidated version found ({probed} probe(s), all "
+                                   f"answered)")
                 entry["action"] = ("rebuild reference/ against the newest one and re-read the "
                                    "Table 3 extract" if newer else "none")
             else:
                 st, data = get(t["probe"], "application/json,application/xhtml+xml")
+                if st >= 400:
+                    raise Unreachable(f"the publisher answered HTTP {st}")
                 entry["result"] = f"reachable, HTTP {st}"
                 if "ecfr" in t["probe"]:
-                    try:
-                        j = json.loads(data)
-                        dates = sorted({v.get("date", "") for v in j.get("content_versions", [])})
-                        if dates:
-                            entry["result"] = f"latest amendment date reported by eCFR: {dates[-1]}"
-                            entry["action"] = ("re-run tools/build_reference.py — the held "
-                                               "snapshot is older than the latest amendment"
-                                               if dates[-1] > "2026-09-01" else "none")
-                    except Exception:
-                        pass
+                    j = json.loads(data)
+                    dates = sorted({v.get("date", "") for v in j.get("content_versions", [])})
+                    if not dates:
+                        raise Unreachable("eCFR answered, but reported no version dates for this "
+                                          "section — the amendment date was not established")
+                    entry["result"] = f"latest amendment date reported by eCFR: {dates[-1]}"
+                    entry["action"] = ("re-run tools/build_reference.py — the held "
+                                       "snapshot is older than the latest amendment"
+                                       if dates[-1] > "2026-09-01" else "none")
                 entry.setdefault("action", "none")
         except Exception as e:
-            entry["result"] = f"UNREACHABLE: {type(e).__name__}"
-            entry["action"] = ("none possible now — the ledger's last confirmed date stands and "
-                               "the audit must say so")
+            unreached += 1
+            detail = str(e)[:160] if isinstance(e, Unreachable) else f"{type(e).__name__}: {str(e)[:120]}"
+            entry["result"] = (f"UNREACHABLE — could not establish whether a newer version exists "
+                               f"({detail})")
+            entry["action"] = NOT_ESTABLISHED
         rows.append(entry)
         print(f"{t['name']}\n  held    : {entry['held']}\n  result  : {entry['result']}\n"
               f"  action  : {entry['action']}\n")
@@ -160,8 +207,18 @@ def main():
              "If this log is old, an audit run today does not silently pretend otherwise. "
              "`rules.md` Stage 3 requires the report to state the date above, so a reader always "
              "knows how fresh the auditor's knowledge of the calendar was.", ""]
+    if unreached:
+        body[body.index(f"Last run: **{today}**")] = (
+            f"Last run: **{today}** — **INCOMPLETE**: {unreached} of {len(TARGETS)} target(s) "
+            f"could not be reached. What is recorded for those is that nothing was established, "
+            f"which is not the same as nothing having changed.")
     open(LOG, "w", encoding="utf-8").write("\n".join(body))
     print(f"wrote {os.path.relpath(LOG, ROOT)}")
+    if unreached:
+        print(f"UNREACHABLE: {unreached} of {len(TARGETS)} target(s) gave no usable answer. "
+              f"This run did not establish that the held standards are current — it established "
+              f"only that it could not ask. Exit 1.")
+        return 1
     return 0
 
 

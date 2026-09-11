@@ -2,14 +2,14 @@
   "sheet": "JET-LUBE - FMG™ NLGI 2_EU_GB_EN_1.4.pdf",
   "sheet_sha256": "a97dab6075db01db25f1f417d391a158a05ebc8a331e0eba39f8c7f4b5d7eafe",
   "sheet_bytes": 206280,
-  "extracted_utc": "2026-09-11T15:07:54Z",
+  "extracted_utc": "2026-09-11T17:25:08Z",
   "rendering": "JET-LUBE - FMG™ NLGI 2_EU_GB_EN_1.4.salus.md",
   "rendering_sha256": "94e9f52d987389a7a51cb48bd9001a5c3001dd5eeb2287030a7526b3f0cc7323",
   "primary_engine": "poppler pdftotext -layout",
   "secondary_engine": "pypdf",
   "roundtrip_identical": true,
   "chars_primary": 14037,
-  "pages": 8,
+  "pages": 7,
   "page_density": [
     {
       "page": 1,
@@ -52,12 +52,6 @@
       "chars_poppler": 666,
       "chars_pypdf": 666,
       "flag": ""
-    },
-    {
-      "page": 8,
-      "chars_poppler": 0,
-      "chars_pypdf": 0,
-      "flag": "no extractable text"
     }
   ],
   "distinct_tokens_primary": 697,
@@ -68,8 +62,9 @@
   "lost_identifiers": [],
   "lost_characters": [],
   "lost_tokens": [],
+  "identifiers_only_in_shipped": [],
   "tokens_only_in_shipped": [],
-  "method_note": "The comparison is by COVERAGE, not by count. The two engines legitimately differ on how many times a repeated page header appears and in what order a label and its value are emitted, and counting that as loss would bury the divergences that matter. What is asserted is that nothing PRESENT in the independent extraction is ABSENT from what ships: every distinct character, every distinct word or number token, and every chemical identifier and hazard code.",
+  "method_note": "The comparison is by COVERAGE, not by count, and in ONE direction. The two engines legitimately differ on how many times a repeated page header appears and in what order a label and its value are emitted, and counting that as loss would bury the divergences that matter. What is asserted is that nothing PRESENT in the independent extraction is ABSENT from what ships: every distinct character, every distinct word or number token, and every chemical identifier and hazard code. The reverse - what the shipped rendering has and the independent engine did not find - is reported in `identifiers_only_in_shipped` and `tokens_only_in_shipped` and is not a defect.",
   "verdict": "PASS",
   "detail": "Two independent engines were run. Every distinct character, every one of the 697 distinct word and number tokens, and all 1 chemical identifiers and hazard codes found by the independent engine are present in the shipped rendering, and that rendering reproduces the primary extraction byte for byte.",
   "limits": [

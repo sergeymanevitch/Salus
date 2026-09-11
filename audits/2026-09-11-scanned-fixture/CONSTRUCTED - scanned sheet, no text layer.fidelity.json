@@ -2,31 +2,25 @@
   "sheet": "CONSTRUCTED - scanned sheet, no text layer.pdf",
   "sheet_sha256": "82c511b4b8a69858f07f2ba1beac39b3d5f2883f8ce36fe1ef16ca49ba9e6a8e",
   "sheet_bytes": 87056,
-  "extracted_utc": "2026-09-11T14:07:55Z",
+  "extracted_utc": "2026-09-11T17:25:09Z",
   "rendering": "CONSTRUCTED - scanned sheet, no text layer.salus.md",
   "rendering_sha256": "7df737f87c588875e574916f010a917cd25ec97c749a3445986d0affacb41bae",
   "primary_engine": "poppler pdftotext -layout",
   "secondary_engine": "pypdf",
   "roundtrip_identical": true,
   "chars_primary": 0,
-  "pages": 2,
+  "pages": 1,
   "page_density": [
     {
       "page": 1,
       "chars_poppler": 0,
       "chars_pypdf": 0,
       "flag": "no extractable text"
-    },
-    {
-      "page": 2,
-      "chars_poppler": 0,
-      "chars_pypdf": 0,
-      "flag": "no extractable text"
     }
   ],
   "verdict": "NO TEXT LAYER",
-  "detail": "The primary engine returned no text. This file carries no extractable text layer - it is an image. Salus cannot establish what it would be checking, so the audit verdict is CANNOT VERIFY.",
   "identifier_divergences": [],
+  "detail": "The primary engine returned no text. This file carries no extractable text layer - it is an image. Salus cannot establish what it would be checking, so the audit verdict is CANNOT VERIFY. `rules.md` Stage 1a stops the run here; Gate 1 (tools/verify_conversion.py) is what enforces the stop.",
   "limits": [
     "Two engines missing the same content agree and are wrong together. Text that exists only as an image is the usual case; see page_density for pages with little extractable text.",
     "Reading order in multi-column layouts is the primary engine's, and is not independently verified.",

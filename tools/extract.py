@@ -18,15 +18,30 @@ promised.
 
 That leaves the real question: did the extraction lose anything the PDF contained? One extractor
 cannot answer that about itself. So the sheet is extracted a second time with an independent
-engine (pypdf, a different codebase from poppler's pdftotext), and the two are compared as
-multisets of characters, ignoring whitespace - the one thing the two engines are entitled to
-disagree about. On top of that, every chemical identifier and hazard code is located in both
-extractions with a whitespace-tolerant pattern and the two sets must match exactly.
+engine (pypdf, a different codebase from poppler's pdftotext), and the two are compared as sets of
+characters, ignoring whitespace - the one thing the two engines are entitled to disagree about. On
+top of that, every chemical identifier and hazard code is located in both extractions with a
+whitespace-tolerant pattern.
+
+THE DIRECTION OF THAT CLAIM, which is not symmetric and was once written here as though it were:
+what is asserted is that nothing the independent engine found is MISSING from what ships. An
+identifier or a token the independent engine did not find, and the shipped rendering has, is not a
+loss and does not fail anything - the two engines read tables in different orders and one of them
+routinely finds a little more. Those are reported, in `identifiers_only_in_shipped` and
+`tokens_only_in_shipped`, so a reader can see the disagreement rather than take "the sets match" on
+trust; they are not gated on, because there is nothing to gate.
 
 WHAT THIS CANNOT PROVE, stated here because a safety document is the wrong place for a quiet
 assumption: if both engines miss the same thing - most of all, text that exists only as an image -
 the comparison agrees and is wrong together. That is why page-level text density is reported per
 page: a page carrying almost no extractable text is flagged, whatever the two engines agree on.
+
+EXIT CODE. This script never fails a run on what it found in the sheet. Whatever the verdict -
+PASS, REVIEW, UNCONFIRMED, NO TEXT LAYER - it exits 0, because it has done its job: the rendering
+and the evidence exist. It exits non-zero only when it could not produce them at all: no such file,
+or the primary engine itself failed. Deciding what the verdict means for a run is Gate 1's job
+(`tools/verify_conversion.py`), and putting the decision in two places is how the two came to
+disagree - REVIEW used to end a shell chain here and pass there. See `tools/CONTEXT.md`.
 """
 import argparse, hashlib, json, os, re, subprocess, sys, collections, datetime
 
@@ -129,6 +144,70 @@ def extract_pypdf(pdf):
         return None, []
 
 
+def split_pages(text):
+    """The pages of a pdftotext extraction.
+
+    pdftotext terminates EVERY page with a form feed, the last one included, so a plain
+    `text.split("\f")` hands back one more element than the document has pages, and that element is
+    always empty. It cost this folder eight fidelity reports that each counted a page too many and
+    raised `no extractable text` on a page that does not exist - the one alarm here that exists
+    because two agreeing engines cannot see text that is only an image. A false instance of it
+    reached two filed reports as fact.
+
+    Only ONE trailing element is dropped and only when it is exactly empty, so a genuinely blank
+    final page - which pdftotext renders as an empty string followed by its own form feed - is still
+    counted and still flagged."""
+    pages = text.split("\f")
+    if len(pages) > 1 and pages[-1] == "":
+        pages.pop()
+    return pages
+
+
+def compare(primary, secondary):
+    """The whole fidelity comparison, in one place because it is asserted in two.
+
+    `extract.py` writes this into the fidelity report; `verify_conversion.py` re-derives it from the
+    PDF and the rendering on disk. When the two held separate copies of it, Gate 1's copy quietly
+    lacked the character-set check, and a sheet that lost `\u00b5` from "49.9 \u00b5g/kg dw" - a factor of a
+    million on an exposure limit - was REVIEW in the report and PASS at the gate. One function, two
+    callers, one answer."""
+    ca, cb = char_set(primary), char_set(secondary)
+    wa, wb = split_tokens(primary), split_tokens(secondary)
+    sa, sb = identifiers(primary), identifiers(secondary)
+
+    hay_primary, hay_secondary = squash(primary), squash(secondary)
+    lost_words = sorted(t for t in (wb - wa) if t not in hay_primary)
+    return {
+        "distinct_tokens_primary": len(wa),
+        "distinct_tokens_secondary": len(wb),
+        "coverage_of_secondary_by_shipped": round(1 - len(lost_words) / max(1, len(wb)), 6),
+        "identifiers_primary": len(sa),
+        "identifiers_secondary": len(sb),
+        "lost_identifiers": [{"kind": k, "value": v} for k, v in sorted(sb - sa)],
+        "lost_characters": sorted(cb - ca)[:120],
+        "lost_tokens": lost_words[:200],
+        "identifiers_only_in_shipped": [{"kind": k, "value": v} for k, v in sorted(sa - sb)],
+        "tokens_only_in_shipped": sorted(t for t in (wa - wb) if t not in hay_secondary)[:60],
+    }
+
+
+def fidelity_verdict(has_text, roundtrip_ok, secondary_available, c):
+    """The single place a fidelity verdict is decided, in the order the questions actually depend on
+    one another. A rendering that is not the extraction is FAIL whatever the second engine did or
+    did not manage - that is a statement about this repository's own file, not about the sheet."""
+    if not has_text:
+        return "NO TEXT LAYER"
+    if not roundtrip_ok:
+        return "FAIL"
+    if not secondary_available:
+        return "UNCONFIRMED"
+    if c["lost_identifiers"]:
+        return "FAIL"
+    if c["lost_tokens"] or c["lost_characters"]:
+        return "REVIEW"
+    return "PASS"
+
+
 def page_density(pages_poppler, pages_pypdf):
     out = []
     n = max(len(pages_poppler), len(pages_pypdf or []))
@@ -170,7 +249,7 @@ def main():
 
     raw_bytes = open(pdf, "rb").read()
     primary = extract_poppler(pdf)
-    pages_poppler = primary.split("\f")
+    pages_poppler = split_pages(primary)
     secondary, pages_pypdf = extract_pypdf(pdf)
 
     rendered = render(primary)
@@ -195,79 +274,63 @@ def main():
         "page_density": page_density(pages_poppler, pages_pypdf),
     }
 
-    if not primary.strip():
-        report["verdict"] = "NO TEXT LAYER"
-        report["detail"] = ("The primary engine returned no text. This file carries no extractable "
-                            "text layer - it is an image. Salus cannot establish what it would be "
-                            "checking, so the audit verdict is CANNOT VERIFY.")
+    has_text = bool(primary.strip())
+    comp = compare(primary, secondary) if (has_text and secondary is not None) else None
+    verdict = fidelity_verdict(has_text, roundtrip_ok, secondary is not None, comp)
+
+    if comp is None:
+        report["verdict"] = verdict
         report["identifier_divergences"] = []
-    elif secondary is None:
-        report["verdict"] = "UNCONFIRMED"
-        report["detail"] = ("The independent engine produced nothing, so the completeness of this "
-                            "rendering was not checked. Either pypdf is not installed, or it could "
-                            "not read this particular file - an AES-encrypted sheet needs the "
-                            "`cryptography` package. This is a statement about the check, not "
-                            "about the sheet: the rendering may be complete, and nothing here "
-                            "shows that it is. Resolve it before using this conversion in an "
-                            "audit.")
-        report["identifier_divergences"] = []
-    else:
-        ca, cb = char_set(primary), char_set(secondary)
-        wa, wb = split_tokens(primary), split_tokens(secondary)
-        ia, ib = identifiers(primary), identifiers(secondary)
-        sa, sb = set(ia), set(ib)
-
-        lost_chars = sorted(cb - ca)
-        haystack = squash(primary)
-        lost_words = sorted(t for t in (wb - wa) if t not in haystack)
-        lost_ids = sorted(sb - sa)
-
-        coverage = 1 - len(lost_words) / max(1, len(wb))
-
-        report["distinct_tokens_primary"] = len(wa)
-        report["distinct_tokens_secondary"] = len(wb)
-        report["coverage_of_secondary_by_shipped"] = round(coverage, 6)
-        report["identifiers_primary"] = len(sa)
-        report["identifiers_secondary"] = len(sb)
-        report["lost_identifiers"] = [{"kind": k, "value": v} for k, v in lost_ids]
-        report["lost_characters"] = lost_chars[:120]
-        report["lost_tokens"] = lost_words[:200]
-        report["tokens_only_in_shipped"] = sorted(
-            t for t in (wa - wb) if t not in squash(secondary))[:60]
-        report["method_note"] = (
-            "The comparison is by COVERAGE, not by count. The two engines legitimately differ on "
-            "how many times a repeated page header appears and in what order a label and its "
-            "value are emitted, and counting that as loss would bury the divergences that matter. "
-            "What is asserted is that nothing PRESENT in the independent extraction is ABSENT "
-            "from what ships: every distinct character, every distinct word or number token, and "
-            "every chemical identifier and hazard code.")
-
-        if not roundtrip_ok:
-            report["verdict"] = "FAIL"
-            report["detail"] = "The rendering does not reproduce the extraction byte for byte."
-        elif lost_ids:
-            report["verdict"] = "FAIL"
-            report["detail"] = (
-                f"{len(lost_ids)} chemical identifier(s) or hazard code(s) are present in the "
-                "independent extraction and absent from the shipped rendering: "
-                + ", ".join(v for _, v in lost_ids[:8])
-                + ". On a safety document this is disqualifying.")
-        elif lost_words or lost_chars:
-            report["verdict"] = "REVIEW"
-            report["detail"] = (
-                f"No identifier was lost, but {len(lost_words)} distinct token(s) and "
-                f"{len(lost_chars)} distinct character(s) appear in the independent extraction "
-                "and not in the shipped rendering. Coverage is "
-                f"{coverage * 100:.4f}%. A person must read lost_tokens before this conversion "
-                "is used in an audit.")
+        if verdict == "NO TEXT LAYER":
+            report["detail"] = ("The primary engine returned no text. This file carries no "
+                                "extractable text layer - it is an image. Salus cannot establish "
+                                "what it would be checking, so the audit verdict is CANNOT VERIFY. "
+                                "`rules.md` Stage 1a stops the run here; Gate 1 "
+                                "(tools/verify_conversion.py) is what enforces the stop.")
         else:
-            report["verdict"] = "PASS"
+            report["detail"] = ("The independent engine produced nothing, so the completeness of "
+                                "this rendering was not checked. Either pypdf is not installed, or "
+                                "it could not read this particular file - an AES-encrypted sheet "
+                                "needs the `cryptography` package. This is a statement about the "
+                                "check, not about the sheet: the rendering may be complete, and "
+                                "nothing here shows that it is. Resolve it before using this "
+                                "conversion in an audit.")
+    else:
+        report.update(comp)
+        report["method_note"] = (
+            "The comparison is by COVERAGE, not by count, and in ONE direction. The two engines "
+            "legitimately differ on how many times a repeated page header appears and in what "
+            "order a label and its value are emitted, and counting that as loss would bury the "
+            "divergences that matter. What is asserted is that nothing PRESENT in the independent "
+            "extraction is ABSENT from what ships: every distinct character, every distinct word "
+            "or number token, and every chemical identifier and hazard code. The reverse - what "
+            "the shipped rendering has and the independent engine did not find - is reported in "
+            "`identifiers_only_in_shipped` and `tokens_only_in_shipped` and is not a defect.")
+
+        report["verdict"] = verdict
+        n_lost_ids = len(comp["lost_identifiers"])
+        if verdict == "FAIL" and not roundtrip_ok:
+            report["detail"] = "The rendering does not reproduce the extraction byte for byte."
+        elif verdict == "FAIL":
+            report["detail"] = (
+                f"{n_lost_ids} chemical identifier(s) or hazard code(s) are present in the "
+                "independent extraction and absent from the shipped rendering: "
+                + ", ".join(d["value"] for d in comp["lost_identifiers"][:8])
+                + ". On a safety document this is disqualifying.")
+        elif verdict == "REVIEW":
+            report["detail"] = (
+                f"No identifier was lost, but {len(comp['lost_tokens'])} distinct token(s) and "
+                f"{len(comp['lost_characters'])} distinct character(s) appear in the independent "
+                "extraction and not in the shipped rendering. Coverage is "
+                f"{comp['coverage_of_secondary_by_shipped'] * 100:.4f}%. A person must read "
+                "lost_tokens and lost_characters before this conversion is used in an audit.")
+        else:
             report["detail"] = (
                 "Two independent engines were run. Every distinct character, every one of the "
-                f"{len(wb)} distinct word and number tokens, and all {len(sb)} chemical "
-                "identifiers and hazard codes found by the independent engine are present in the "
-                "shipped rendering, and that rendering reproduces the primary extraction byte "
-                "for byte.")
+                f"{comp['distinct_tokens_secondary']} distinct word and number tokens, and all "
+                f"{comp['identifiers_secondary']} chemical identifiers and hazard codes found by "
+                "the independent engine are present in the shipped rendering, and that rendering "
+                "reproduces the primary extraction byte for byte.")
 
     report["limits"] = [
         "Two engines missing the same content agree and are wrong together. Text that exists only "
@@ -286,8 +349,13 @@ def main():
         print(f"  coverage {report['coverage_of_secondary_by_shipped'] * 100:.4f}%  "
               f"identifiers {report.get('identifiers_secondary', 0)}  "
               f"lost identifiers {len(report.get('lost_identifiers', []))}  "
+              f"lost characters {len(report.get('lost_characters', []))}  "
               f"lost tokens {len(report.get('lost_tokens', []))}")
-    return 0 if report["verdict"] in ("PASS", "NO TEXT LAYER") else 1
+    if report["verdict"] != "PASS":
+        print(f"  this is a report, not a gate - exit 0. Run tools/verify_conversion.py to "
+              f"decide what {report['verdict']} means for the run.")
+    # Deliberately 0 for every verdict: see EXIT CODE in this file's docstring.
+    return 0
 
 
 if __name__ == "__main__":

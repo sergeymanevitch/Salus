@@ -7,8 +7,17 @@
 | Standard applied | none — the run stopped before a standard could apply |
 | Run date | 2026-09-11 |
 | Standards knowledge last confirmed online | 2026-09-11 — see `reference/FRESHNESS-LOG.md` |
-| Conversion gate | PASS — coverage 100.0000 %, six pages, 10,403 characters, no chemical identifier lost |
+| Conversion gate | PASS — coverage 100.0000 %, five pages, 10,403 characters, no chemical identifier lost |
 | Scope gate | OUT OF SCOPE — `python3 tools/check_scope.py` exits 2 on this sheet |
+
+**Corrected 2026-09-11.** The conversion-gate row above read *six pages* when this report was filed;
+the sheet has five, and the findings section of the companion run counts them correctly as 1/5 to
+5/5. The six came out of `fidelity.json`, which counted a page that does not exist: `pdftotext` ends
+every page with a form feed including the last, and `tools/extract.py` split on it without
+discarding the empty tail. The wrong count is the instrument's and the report repeated it.
+`tools/extract.py` is fixed and the fidelity report for this run is regenerated from the same PDF.
+Nothing else here moves: the run stopped on scope, and no part of that turned on how long the sheet
+is.
 
 ## VERDICT: CANNOT VERIFY
 
