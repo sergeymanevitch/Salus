@@ -9,11 +9,11 @@ If they do not, the source has changed and the audit rules that cite it are stal
   {
     "file": "29-cfr-1910-1200.md",
     "source_url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-29.xml?part=1910&section=1910.1200",
-    "retrieved_utc": "2026-09-11T14:02:59Z",
+    "retrieved_utc": "2026-09-11T16:59:55Z",
     "source_sha256": "d8e5957d3a3c1f41aa3f54d513178fc3a16fb995edd16e1eb660280d8e7c7e75",
     "source_bytes": 363243,
-    "output_sha256": "12c40937ea7971a9b976ceb3aabd679095185586fa5816deec72b4edc4e49f8b",
-    "output_bytes": 301242,
+    "output_sha256": "d5c459cac1e0629537d1203703cc2801b7900aff9b09119efc5274829127dd5f",
+    "output_bytes": 308408,
     "generated_by": "tools/build_reference.py"
   }
 ]

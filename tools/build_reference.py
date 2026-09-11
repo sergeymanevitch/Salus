@@ -116,12 +116,29 @@ def tables_to_md(block):
     return re.sub(r"<table[^>]*>.*?</table>", one, block, flags=re.S | re.I)
 
 
+# eCFR block tags, longest name first so that an indent variant is never mistaken for its
+# base tag. The publisher writes indented paragraphs as <P-2>, <FP-1>, <FP-2>: a pattern of
+# `<(P|FP)[^>]*>` matches those openings too, because [^>]* swallows the "-2", and then hunts
+# for a closing </P> or </FP> that belongs to a different element tens of thousands of
+# characters away. Everything in between - headings, paragraphs, whole tables - is consumed as
+# the text of one paragraph. That is what ran Appendices A and B together into single lines of
+# 143,677 and 69,528 characters and made a citation into them unopenable. The closing tag must
+# match the opening tag exactly, suffix included.
+ECFR_BLOCK = re.compile(
+    r"<(HEAD|HD1|HD2|HD3|HED|CAPTION|NOTE|FP-\d+|FP|P-\d+|P)(?:\s[^>]*)?>(.*?)</\1\s*>"
+    r"|(\n\|[^\n]*\|)", re.S | re.I)
+
+
 def ecfr_to_md(xml):
-    """eCFR section XML -> Markdown, keeping the (a)(1)(i) numbering visible."""
+    """eCFR section XML -> Markdown, keeping the (a)(1)(i) numbering visible.
+
+    One block element in, one line out. The appendices are numbered the same way the body is -
+    B.6.1, C.2.4.5, A.7.2.3.1 - and each of those provisions is its own element in the source,
+    so keeping the elements apart is the whole of what makes them citable.
+    """
     body = tables_to_md(xml.decode("utf-8", "replace"))
     out = []
-    for m in re.finditer(r"<(HEAD|HD1|HD2|HD3|P|FP|HED|NOTE|CAPTION)[^>]*>(.*?)</\1>|(\n\|[^\n]*\|)",
-                         body, re.S | re.I):
+    for m in ECFR_BLOCK.finditer(body):
         if m.group(3):
             out.append(m.group(3).strip())
             continue
@@ -137,6 +154,9 @@ def ecfr_to_md(xml):
         elif tag == "NOTE":
             out.append("> " + inner)
         else:
+            # P, P-n, FP, FP-n. The indent variants carry ordinary provision text, so they are
+            # written the same way a <P> is - one paragraph per line - not given a style of
+            # their own.
             out.append(inner)
     return "\n\n".join(out)
 
@@ -290,56 +310,63 @@ def write(path, text, source_url, raw, retrieved):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--only", action="append", choices=sorted(SOURCES),
+                    help="rebuild one standard and leave the others exactly as they are. "
+                         "Repeatable. Without it, all three are rebuilt.")
     a = ap.parse_args()
+    want = set(a.only) if a.only else set(SOURCES)
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    print("OSHA 29 CFR 1910.1200 ...")
-    raw = fetch("osha", a.offline)
-    write(os.path.join(REF, "us-osha-hcs", "29-cfr-1910-1200.md"),
-          ecfr_to_md(raw), SOURCES["osha"]["url"], raw, now)
+    if "osha" in want:
+        print("OSHA 29 CFR 1910.1200 ...")
+        raw = fetch("osha", a.offline)
+        write(os.path.join(REF, "us-osha-hcs", "29-cfr-1910-1200.md"),
+              ecfr_to_md(raw), SOURCES["osha"]["url"], raw, now)
 
-    print("EU Regulation 2020/878 ...")
-    raw = fetch("eu878", a.offline)
-    write(os.path.join(REF, "eu-2020-878", "regulation-2020-878.md"),
-          eurlex_to_md(raw), SOURCES["eu878"]["url"], raw, now)
+    if "eu878" in want:
+        print("EU Regulation 2020/878 ...")
+        raw = fetch("eu878", a.offline)
+        write(os.path.join(REF, "eu-2020-878", "regulation-2020-878.md"),
+              eurlex_to_md(raw), SOURCES["eu878"]["url"], raw, now)
 
-    print("CLP Annex VI (consolidated 2026-07-01) ...")
-    raw = fetch("clp", a.offline)
-    write(os.path.join(REF, "eu-clp-annex-vi", "annex-vi-notes.md"),
-          "# CLP Annex VI, Part 1 — Notes relating to the identification, "
-          "classification and labelling of substances\n\n"
-          "Source: Regulation (EC) No 1272/2008, consolidated text in force from 2026-07-01.\n"
-          + clp_notes(raw), SOURCES["clp"]["url"], raw, now)
+    if "clp" in want:
+        print("CLP Annex VI (consolidated 2026-07-01) ...")
+        raw = fetch("clp", a.offline)
+        write(os.path.join(REF, "eu-clp-annex-vi", "annex-vi-notes.md"),
+              "# CLP Annex VI, Part 1 — Notes relating to the identification, "
+              "classification and labelling of substances\n\n"
+              "Source: Regulation (EC) No 1272/2008, consolidated text in force from 2026-07-01.\n"
+              + clp_notes(raw), SOURCES["clp"]["url"], raw, now)
 
-    cas = corpus_cas(os.path.join(ROOT, "test-cases", "sds"))
-    print(f"  {len(cas)} distinct CAS/Index numbers found in the shipped test sheets")
-    rows = clp_rows(raw, cas)
-    md = ["# CLP Annex VI, Table 3 — harmonised classification rows cited by this auditor",
-          "",
-          "Source: Regulation (EC) No 1272/2008, consolidated text in force from 2026-07-01.",
-          "",
-          "This is an **extract**, not the whole table. Annex VI Table 3 holds several thousand",
-          "entries; shipping all of them would make this folder unreadable and would not make any",
-          "finding more checkable. The rows below are exactly those whose CAS number appears in a",
-          "sheet under `test-cases/sds/`, matched by CAS number or by Index number, so every finding",
-          "this auditor makes about a harmonised",
-          "classification can be opened and checked here.",
-          "",
-          f"Rows: **{len(rows)}**, selected from {len(cas)} distinct CAS and Index numbers "
-          "found in the corpus.",
-          "",
-          "A substance absent from this extract is not thereby unclassified — it may simply have",
-          "no harmonised entry, in which case the supplier self-classifies and this auditor cannot",
-          "call that classification wrong. See `identity.md`, Declared blind spots.",
-          ""]
-    if rows:
-        md.append("| " + " | ".join(CLP_COLS) + " |")
-        md.append("| " + " | ".join(["---"] * len(CLP_COLS)) + " |")
-        for r in rows:
-            r = (r + [""] * len(CLP_COLS))[:len(CLP_COLS)]
-            md.append("| " + " | ".join(c.replace("|", "\\|") for c in r) + " |")
-    write(os.path.join(REF, "eu-clp-annex-vi", "annex-vi-table-3-extract.md"),
-          "\n".join(md) + "\n", SOURCES["clp"]["url"], raw, now)
+        cas = corpus_cas(os.path.join(ROOT, "test-cases", "sds"))
+        print(f"  {len(cas)} distinct CAS/Index numbers found in the shipped test sheets")
+        rows = clp_rows(raw, cas)
+        md = ["# CLP Annex VI, Table 3 — harmonised classification rows cited by this auditor",
+              "",
+              "Source: Regulation (EC) No 1272/2008, consolidated text in force from 2026-07-01.",
+              "",
+              "This is an **extract**, not the whole table. Annex VI Table 3 holds several thousand",
+              "entries; shipping all of them would make this folder unreadable and would not make any",
+              "finding more checkable. The rows below are exactly those whose CAS number appears in a",
+              "sheet under `test-cases/sds/`, matched by CAS number or by Index number, so every finding",
+              "this auditor makes about a harmonised",
+              "classification can be opened and checked here.",
+              "",
+              f"Rows: **{len(rows)}**, selected from {len(cas)} distinct CAS and Index numbers "
+              "found in the corpus.",
+              "",
+              "A substance absent from this extract is not thereby unclassified — it may simply have",
+              "no harmonised entry, in which case the supplier self-classifies and this auditor cannot",
+              "call that classification wrong. See `identity.md`, Declared blind spots.",
+              ""]
+        if rows:
+            md.append("| " + " | ".join(CLP_COLS) + " |")
+            md.append("| " + " | ".join(["---"] * len(CLP_COLS)) + " |")
+            for r in rows:
+                r = (r + [""] * len(CLP_COLS))[:len(CLP_COLS)]
+                md.append("| " + " | ".join(c.replace("|", "\\|") for c in r) + " |")
+        write(os.path.join(REF, "eu-clp-annex-vi", "annex-vi-table-3-extract.md"),
+              "\n".join(md) + "\n", SOURCES["clp"]["url"], raw, now)
     print("done")
 
 

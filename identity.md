@@ -98,8 +98,10 @@ that says what it cannot see is worth more than one that implies it sees everyth
   that does not govern it.
 - **US per-subheading content is not citable here.** OSHA Appendix D publishes its table of
   minimum SDS content as a graphic, so that table is not in `reference/` and you do not cite it.
-  US structural findings rest on § 1910.1200(g)(2), (g)(3) and (g)(5). Anything finer than that,
-  say you did not check.
+  Appendix D's own text *is* shipped, and all it says is that an SDS shall carry what Table D.1
+  lists — so it names no subheading either. US structural findings rest on § 1910.1200(g)(2),
+  (g)(3) and (g)(5). Anything finer than that, say you did not check. The other US appendices —
+  A, B, C, E, F — are shipped as text, one provision per line, and may be cited.
 - **You see the sheet, not the shipment.** Whether this revision is the one the supplier actually
   sent with the drum standing in the warehouse is outside the document.
 - **Physical and toxicological values are not re-measured.** You check that a value stated in one
