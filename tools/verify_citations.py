@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Gate 2 — does every citation in a report exist, and does the quoted text match the standard?
+
+    python3 tools/verify_citations.py <report.md> [--reference reference]
+
+This is the gate that reads the AUDITOR'S OWN OUTPUT. A checker that only proves the reference
+folder still says what it said proves nothing about the report: it would pass a report whose
+findings had drifted away from the text they cite. So this one works the other way round. It
+parses each finding out of the report, pulls the quoted provision text out of it, and looks for
+that text in the file the finding names. If the report and the standard disagree, the standard
+wins and the gate fails.
+
+To see it work, change one character inside a quoted RULE string in a report and re-run.
+
+Checks, per finding:
+  1. the five required parts are present
+  2. every reference/ path named exists
+  3. every quoted string in RULE occurs verbatim in one of those files
+  4. the revision named matches reference/STANDARDS-LEDGER.md
+  5. a confirmation date is present and matches the ledger
+
+A finding marked [HOUSE POLICY - no provision] is held to a different rule, not a weaker one: it
+must state in BOTH its RULE and its WHERE IN THE STANDARD that no provision exists. A policy gate
+that quietly omits its citation and one that declares it has none look identical to a script that
+only counts citations, and they are not the same thing at all.
+"""
+import argparse, os, re, sys
+
+REQUIRED = ["WHAT", "WHERE", "RULE", "WHERE IN THE STANDARD", "WHY"]
+
+
+def norm_ws(s):
+    return re.sub(r"\s+", " ", s.replace(" ", " ")).strip()
+
+
+def load_reference(refdir):
+    files = {}
+    for root, _, names in os.walk(refdir):
+        for n in names:
+            if n.endswith(".md"):
+                p = os.path.join(root, n)
+                files[os.path.relpath(p).replace(os.sep, "/")] = norm_ws(
+                    open(p, encoding="utf-8", errors="replace").read())
+    return files
+
+
+def split_findings(text):
+    """A finding heading is a line-leading tag followed by its class marker, as in
+    '### [F-03] [STANDARD] ...'. A bare tag at the head of a list item is a cross-reference
+    and must not open a new block."""
+    marks = [m.start() for m in re.finditer(
+        r"(?m)^\s*#*\s*\[(?:F|P)-\d+\]\s+\[(?:STANDARD|HOUSE POLICY)", text)]
+    out = []
+    for i, s in enumerate(marks):
+        e = marks[i + 1] if i + 1 < len(marks) else len(text)
+        out.append(text[s:e])
+    return out
+
+
+def field(block, name):
+    m = re.search(rf"(?m)^\s*{re.escape(name)}\b[:\s]*(.*?)(?=^\s*(?:{'|'.join(re.escape(r) for r in REQUIRED)})\b|\Z)",
+                  block, re.S)
+    return m.group(1) if m else None
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("report")
+    ap.add_argument("--reference", default="reference")
+    a = ap.parse_args()
+
+    report = open(a.report, encoding="utf-8").read()
+    ref = load_reference(a.reference)
+    ledger_path = os.path.join(a.reference, "STANDARDS-LEDGER.md")
+    ledger = norm_ws(open(ledger_path, encoding="utf-8").read()) if os.path.exists(ledger_path) else ""
+
+    findings = split_findings(report)
+    if not findings:
+        print("FAIL  no findings found in the report — expected blocks headed [F-01], [P-01], ...")
+        return 1
+
+    checks = failures = 0
+    for block in findings:
+        tag = re.search(r"\[(?:F|P)-\d+\]", block).group()
+        house = "[HOUSE POLICY" in block
+
+        for part in REQUIRED:
+            checks += 1
+            if field(block, part) is None:
+                failures += 1
+                print(f"FAIL  {tag}  missing required part: {part}")
+
+        where = field(block, "WHERE IN THE STANDARD") or ""
+        named = re.findall(r"reference/[\w./-]+\.md", where)
+        checks += 1
+        if house:
+            # A policy gate has no provision. What it must do instead is say so, in both
+            # places a reader looks, so it can never be mistaken for a regulatory breach.
+            if "no provision" not in where.lower():
+                failures += 1
+                print(f"FAIL  {tag}  marked [HOUSE POLICY] but WHERE IN THE STANDARD does not "
+                      f"say 'no provision'")
+        elif not named:
+            failures += 1
+            print(f"FAIL  {tag}  names no file under reference/")
+        for path in named:
+            checks += 1
+            if path not in ref:
+                failures += 1
+                print(f"FAIL  {tag}  cites a file that does not exist: {path}")
+
+        rule = field(block, "RULE") or ""
+        quotes = [q for q in re.findall(r'"([^"]{12,})"', rule)]
+        checks += 1
+        if house:
+            if "none" not in rule.lower()[:80]:
+                failures += 1
+                print(f"FAIL  {tag}  marked [HOUSE POLICY] but RULE does not open by stating "
+                      f"that there is none")
+            quotes = []
+        elif not quotes:
+            failures += 1
+            print(f"FAIL  {tag}  RULE quotes nothing from the standard "
+                  f"(a quoted string of 12+ characters is required)")
+        for q in quotes:
+            checks += 1
+            needle = norm_ws(q).rstrip(" .[")
+            hay = " ".join(ref[p] for p in named if p in ref) or " ".join(ref.values())
+            if needle not in hay:
+                failures += 1
+                print(f"FAIL  {tag}  quoted text is not in the cited standard: \"{needle[:90]}\"")
+
+        checks += 1
+        rev = re.search(r"(?:revision|version)\s*:\s*([^\n]+)", where, re.I)
+        if not rev:
+            failures += 1
+            print(f"FAIL  {tag}  names no revision of the standard")
+        else:
+            checks += 1
+            key = norm_ws(rev.group(1)).split(",")[0].strip()
+            if key and key not in ledger:
+                failures += 1
+                print(f"FAIL  {tag}  revision \"{key}\" is not in STANDARDS-LEDGER.md")
+
+        checks += 1
+        conf = re.search(r"confirmed(?:\s+current)?\s*:?\s*(\d{4}-\d{2}-\d{2})", where, re.I)
+        if not conf:
+            failures += 1
+            print(f"FAIL  {tag}  gives no date on which that revision was confirmed current")
+        elif conf.group(1) not in ledger:
+            failures += 1
+            print(f"FAIL  {tag}  confirmation date {conf.group(1)} does not appear in the ledger")
+
+    print(f"\n{len(findings)} finding(s), {checks} check(s), {failures} failure(s)")
+    if failures:
+        print("The report does not agree with the standard it cites. The standard wins.")
+        return 1
+    print("Every citation exists, every quoted provision is present verbatim in the file named, "
+          "and every revision and confirmation date matches the ledger.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,8 @@
+# Downloaded source markup for tools/build_reference.py. Large, reproducible, and not ours:
+# the generated files under reference/ are what ships, with their hashes in PROVENANCE.md.
+tools/.cache/
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store

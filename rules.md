@@ -1,0 +1,195 @@
+# How Salus audits
+
+One pass, seven stages, in this order. Later stages depend on earlier ones: you cannot check a
+provision until you know which revision of the standard applies, and you cannot know that until
+you have read the sheet's own header. Do not reorder them.
+
+Stop conditions are named at each stage. When a stage says stop, stop — do not "check the rest
+anyway." A verdict reached on a document you could not read is worse than no verdict.
+
+---
+
+## Stage 0 — Settings
+
+Read `config/jurisdiction.md`. It names the regime this installation audits under: `EU` or `US`.
+
+- Not filled in → **CANNOT VERIFY**, reason: jurisdiction not configured. Stop.
+- Never infer jurisdiction from an IP address, a locale, or where the supplier sits. A reviewer
+  in Tel Aviv may be auditing for a German legal entity. The settings file is the answer.
+
+## Stage 1 — Legibility
+
+Extract the sheet. `tools/extract.py` produces `<name>.salus.md`, a line-anchored rendering, plus
+a fidelity report.
+
+- No text layer, zero characters, or the fidelity check fails → **CANNOT VERIFY**, reason quoted
+  from the fidelity report. Stop.
+- Text extracted but no section headings found at all → **CANNOT VERIFY**. Stop.
+- Partial: some sections legible, others empty → continue, and record each unreadable section as
+  `not assessed — unreadable`, never as a failure.
+
+## Stage 2 — Age gate *(house policy, not a provision)*
+
+Find the date of issue or last revision. Compare with the run date.
+
+- **≥ 5 years old → DOES NOT CONFORM.** The reason is recorded as a **policy gate**, and it is
+  marked in the report as carrying no provision, because neither 2020/878 nor 1910.1200 sets an
+  expiry. The rule exists because formulations change faster than sheets are reissued, and a
+  sheet from 1997 read in 2026 is describing a different product. The remedy is a reissued sheet,
+  or a written statement from the manufacturer that the composition has not changed.
+- **No date found anywhere → CANNOT VERIFY.** Do not guess from a file timestamp.
+- Under five years → record the age and continue.
+
+The age gate never silently ends the audit. Continue through the remaining stages and report
+everything you found, so the reviewer writing to the supplier has the whole list at once.
+
+## Stage 3 — Which revision the sheet was compiled to
+
+Look for the sheet's own declaration. Suppliers state it in the header — *"Conforms to Regulation
+(EC) No. 1907/2006 (REACH), Annex II, as amended by Commission Regulation (EU) 2020/878"* — or
+inside Section 15, or not at all.
+
+Then open `reference/STANDARDS-LEDGER.md` and compare against the dates, not against your memory.
+
+- **Declared revision superseded and its transition window closed** → finding, citing the article
+  that closed it. For the EU that is 2020/878 Article 2, window closed 2022-12-31.
+- **Declared revision superseded but the window is still open** → **not a finding.** Record it as
+  a dated note: which revision, which deadline, how long is left. For US mixtures the window runs
+  to 2027-11-19 under § 1910.1200(j)(3)(i), so most US sheets sit here today.
+- **No declaration** → do not treat this as a failure by itself. Infer the applicable revision
+  from the issue date against the ledger, and say in the report that you inferred it.
+
+## Stage 4 — Structure: the sixteen sections
+
+Check that all sixteen sections are present, numbered, in order, and carry content.
+
+- EU: Annex II to 2020/878, Part A, sections 1–16, and the subheadings each section names.
+- US: § 1910.1200(g)(2)(i)–(xvi) for the headings and their order; § 1910.1200(g)(3) for the rule
+  that a subheading with nothing to report must be *marked* as such rather than left blank.
+
+A blank subheading that is not marked is a finding under (g)(3) in the US and under the
+corresponding Annex II requirement in the EU. An empty section is a finding. A missing section is
+a finding. Quote the section number and the heading as it appears in the sheet.
+
+## Stage 5 — Classification: Section 3 against CLP Annex VI
+
+This is where sheets fail most often, and it is the stage that makes Salus an auditor rather than
+a checklist.
+
+For each ingredient row in Section 3:
+
+1. Read the identifiers: CAS number, EC number, Index number, REACH registration number.
+2. Look the substance up in `reference/eu-clp-annex-vi/annex-vi-table-3-extract.md`, **by CAS or
+   Index number**. Read one row. Do not read the file as prose — this is the whole reason a run
+   costs a few thousand tokens instead of forty thousand.
+3. **No row** → not harmonised. Record `self-classification, not checked` and move on. You have
+   no provision to test it against and must not invent one.
+4. **Row found** → compare the hazard class and category codes and the hazard statement codes in
+   the sheet with the row.
+   - Identical → passes. Say so; a pass is part of the report.
+   - Sheet declares **more** than the row → not a finding. A supplier may classify more strictly
+     than the harmonised minimum.
+   - Sheet declares **less** than the row → check the Notes column first.
+5. **Notes column.** If the row carries a note, open
+   `reference/eu-clp-annex-vi/annex-vi-notes.md` and read that note before writing anything. Most
+   of them are conditional releases from part of the harmonised classification, and a supplier
+   relying on one is not in breach — but the sheet has to show it relied on it. Note L, for
+   example, releases certain petroleum substances from the carcinogen classification only where
+   the DMSO extract is below 3 % measured by IP 346. The finding in that case is not "wrong hazard
+   code"; it is that the sheet departs from a harmonised classification **without recording the
+   basis** the note requires. Write it that way.
+
+## Stage 6 — Internal consistency
+
+The standard requires a coherent document, not sixteen unrelated lists. Check that the same fact
+told twice is told the same way.
+
+| Check | What contradicts what |
+| --- | --- |
+| Flash point | the value in Section 9 against every other mention of it, and against the flammability class declared in Section 2 |
+| Concentration | each ingredient's percentage band in Section 3 against any concentration limit the Annex VI row sets, and against the hazard statements in Section 2 |
+| Hazard statements | the H-codes in Section 2 against the H-codes listed in Section 16 and against those in Section 3 |
+| Physical state | Section 9 against Section 1's product type |
+| Emergency contact | present in Section 1.4, and a number, not a placeholder |
+| Storage and handling | Section 7 against the hazards declared in Section 2 |
+| Disposal, transport, regulatory | Sections 13–15 present and populated, with the US caveat in `identity.md` |
+
+Report a contradiction as a contradiction: quote both values, name both sections, and say that
+the sheet does not let a reader determine which is correct. Do not pick a winner — you have no
+basis to, and choosing one would be advising about the material.
+
+---
+
+## How a finding is written
+
+Every finding carries five things. A finding missing any of them is not shippable.
+
+    [F-03] Section 3 — classification departs from Annex VI without the Note L basis
+      WHAT   Section 3 lists "Distillates (petroleum), hydrotreated heavy naphthenic",
+             CAS 64742-52-5, at >=25 - <=50 %, classified "Asp. Tox. 1, H304".
+      WHERE  page 2, line 110 of BG - HCF MSDS 510231_UK_EN.pdf
+      RULE   CLP Annex VI, Table 3, Index 649-465-00-7: "Carc. 1B / H350", Notes column "L".
+             Note L: "The harmonised classification as a carcinogen applies unless it can be
+             shown that the substance contains less than 3 % of dimethyl sulphoxide extract as
+             measured by IP 346 [...]"
+      WHERE IN THE STANDARD
+             reference/eu-clp-annex-vi/annex-vi-table-3-extract.md, row Index 649-465-00-7
+             reference/eu-clp-annex-vi/annex-vi-notes.md, Note L
+             revision: consolidated 02008R1272-20250201, confirmed current 2026-09-11
+      WHY    The harmonised entry classifies this substance as a category 1B carcinogen. The
+             sheet does not carry that classification and does not state that the Note L
+             condition was met, so a reader cannot tell whether the departure is lawful.
+
+`WHERE IN THE STANDARD` is three parts, not one: the file and the row, the revision it belongs
+to, and the date that revision was last confirmed current. A finding is checkable in time as well
+as in text — a report read six months from now still says what Salus knew when it was written.
+
+## Two classes of finding, never mixed
+
+| Class | Marked | Has a provision | Example |
+| --- | --- | --- | --- |
+| **Standard violation** | `[STANDARD]` | yes, always | Section 3 classification against Annex VI |
+| **Policy gate** | `[HOUSE POLICY — no provision]` | no, and it says so | the five-year age gate |
+
+Both can produce DOES NOT CONFORM. They must never look alike on the page. A reader has to be
+able to tell at a glance which findings the law requires and which this installation requires,
+because those two carry different weight in a conversation with a supplier.
+
+## Severity
+
+Three levels, and severity never changes the verdict — any finding of either class produces DOES
+NOT CONFORM. Severity orders the list so the reviewer knows what to raise first.
+
+- **BLOCKING** — the sheet cannot serve its purpose: a missing or empty section, a superseded
+  revision past its window, a classification that understates a harmonised entry, a contradiction
+  in a value that drives a hazard class.
+- **MATERIAL** — a reader can still use the sheet but the standard is not met: an unmarked empty
+  subheading, a missing identifier, a note relied on without stating the basis.
+- **MINOR** — formal defects: ordering, numbering, a heading that does not match the wording the
+  standard sets.
+
+## Token discipline
+
+A run stays under roughly 10,000 tokens because of *how* the reference layer is read, not because
+anything is skipped.
+
+- Read the sheet through its extracted `.salus.md`, and read sections by anchor, not the whole file.
+- Read Annex VI **by identifier lookup**. One CAS number, one row. Never load the table.
+- Open `annex-vi-notes.md` only when a row's Notes column is non-empty, and read only that note.
+- Open the standard's text at the provision you are about to cite, not before.
+- The full converted sheet is shipped beside the report so a judge can read all of it. You do not
+  have to, and the two facts are not in tension: what is shipped and what is read are different
+  questions.
+
+## Before the report leaves
+
+Run all three. A report that has not passed them has not been produced.
+
+    python3 tools/verify_conversion.py <sheet.pdf>   # gate 1: is the conversion faithful
+    python3 tools/verify_citations.py <report.md>    # gate 2: does every citation exist and match
+    python3 tools/validate_report.py <report.md>     # gate 3: verdict shape and the hard boundaries
+
+Gate 3 is the one that catches you. It scans the report for permission language in English and
+Russian and voids the run if it finds any. Run these as cold subagents with no knowledge of how
+the audit went, or run them as scripts — either way the checker must not be the thing that made
+the claim.

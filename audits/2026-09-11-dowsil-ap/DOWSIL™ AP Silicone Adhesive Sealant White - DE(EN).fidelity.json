@@ -1,0 +1,206 @@
+{
+  "sheet": "DOWSIL™ AP Silicone Adhesive Sealant White - DE(EN).pdf",
+  "sheet_sha256": "574125b6ccce1ac902858078f7cc5cdf19db9cb0aa1566bdc3cf7b8a6785426a",
+  "sheet_bytes": 682028,
+  "extracted_utc": "2026-09-11T14:07:55Z",
+  "rendering": "DOWSIL™ AP Silicone Adhesive Sealant White - DE(EN).salus.md",
+  "rendering_sha256": "2e50f9980f481a42c0a91938afd29df777ea1029dcb28f4a41738492c608435d",
+  "primary_engine": "poppler pdftotext -layout",
+  "secondary_engine": "pypdf",
+  "roundtrip_identical": true,
+  "chars_primary": 53306,
+  "pages": 29,
+  "page_density": [
+    {
+      "page": 1,
+      "chars_poppler": 1501,
+      "chars_pypdf": 1501,
+      "flag": ""
+    },
+    {
+      "page": 2,
+      "chars_poppler": 1990,
+      "chars_pypdf": 1990,
+      "flag": ""
+    },
+    {
+      "page": 3,
+      "chars_poppler": 1140,
+      "chars_pypdf": 1140,
+      "flag": ""
+    },
+    {
+      "page": 4,
+      "chars_poppler": 2086,
+      "chars_pypdf": 2086,
+      "flag": ""
+    },
+    {
+      "page": 5,
+      "chars_poppler": 2428,
+      "chars_pypdf": 2428,
+      "flag": ""
+    },
+    {
+      "page": 6,
+      "chars_poppler": 2509,
+      "chars_pypdf": 2509,
+      "flag": ""
+    },
+    {
+      "page": 7,
+      "chars_poppler": 1632,
+      "chars_pypdf": 1632,
+      "flag": ""
+    },
+    {
+      "page": 8,
+      "chars_poppler": 1361,
+      "chars_pypdf": 1361,
+      "flag": ""
+    },
+    {
+      "page": 9,
+      "chars_poppler": 3043,
+      "chars_pypdf": 3043,
+      "flag": ""
+    },
+    {
+      "page": 10,
+      "chars_poppler": 1381,
+      "chars_pypdf": 1381,
+      "flag": ""
+    },
+    {
+      "page": 11,
+      "chars_poppler": 1446,
+      "chars_pypdf": 1446,
+      "flag": ""
+    },
+    {
+      "page": 12,
+      "chars_poppler": 1402,
+      "chars_pypdf": 1402,
+      "flag": ""
+    },
+    {
+      "page": 13,
+      "chars_poppler": 1414,
+      "chars_pypdf": 1414,
+      "flag": ""
+    },
+    {
+      "page": 14,
+      "chars_poppler": 1281,
+      "chars_pypdf": 1281,
+      "flag": ""
+    },
+    {
+      "page": 15,
+      "chars_poppler": 1686,
+      "chars_pypdf": 1686,
+      "flag": ""
+    },
+    {
+      "page": 16,
+      "chars_poppler": 1776,
+      "chars_pypdf": 1776,
+      "flag": ""
+    },
+    {
+      "page": 17,
+      "chars_poppler": 1847,
+      "chars_pypdf": 1847,
+      "flag": ""
+    },
+    {
+      "page": 18,
+      "chars_poppler": 1782,
+      "chars_pypdf": 1782,
+      "flag": ""
+    },
+    {
+      "page": 19,
+      "chars_poppler": 1964,
+      "chars_pypdf": 1964,
+      "flag": ""
+    },
+    {
+      "page": 20,
+      "chars_poppler": 1886,
+      "chars_pypdf": 1886,
+      "flag": ""
+    },
+    {
+      "page": 21,
+      "chars_poppler": 1807,
+      "chars_pypdf": 1807,
+      "flag": ""
+    },
+    {
+      "page": 22,
+      "chars_poppler": 1735,
+      "chars_pypdf": 1735,
+      "flag": ""
+    },
+    {
+      "page": 23,
+      "chars_poppler": 3143,
+      "chars_pypdf": 3143,
+      "flag": ""
+    },
+    {
+      "page": 24,
+      "chars_poppler": 2175,
+      "chars_pypdf": 2175,
+      "flag": ""
+    },
+    {
+      "page": 25,
+      "chars_poppler": 1714,
+      "chars_pypdf": 1714,
+      "flag": ""
+    },
+    {
+      "page": 26,
+      "chars_poppler": 2130,
+      "chars_pypdf": 2130,
+      "flag": ""
+    },
+    {
+      "page": 27,
+      "chars_poppler": 2223,
+      "chars_pypdf": 2223,
+      "flag": ""
+    },
+    {
+      "page": 28,
+      "chars_poppler": 2824,
+      "chars_pypdf": 2824,
+      "flag": ""
+    },
+    {
+      "page": 29,
+      "chars_poppler": 0,
+      "chars_pypdf": 0,
+      "flag": "no extractable text"
+    }
+  ],
+  "distinct_tokens_primary": 1476,
+  "distinct_tokens_secondary": 1481,
+  "coverage_of_secondary_by_shipped": 1.0,
+  "identifiers_primary": 23,
+  "identifiers_secondary": 23,
+  "lost_identifiers": [],
+  "lost_characters": [],
+  "lost_tokens": [],
+  "tokens_only_in_shipped": [],
+  "method_note": "The comparison is by COVERAGE, not by count. The two engines legitimately differ on how many times a repeated page header appears and in what order a label and its value are emitted, and counting that as loss would bury the divergences that matter. What is asserted is that nothing PRESENT in the independent extraction is ABSENT from what ships: every distinct character, every distinct word or number token, and every chemical identifier and hazard code.",
+  "verdict": "PASS",
+  "detail": "Two independent engines were run. Every distinct character, every one of the 1481 distinct word and number tokens, and all 23 chemical identifiers and hazard codes found by the independent engine are present in the shipped rendering, and that rendering reproduces the primary extraction byte for byte.",
+  "limits": [
+    "Two engines missing the same content agree and are wrong together. Text that exists only as an image is the usual case; see page_density for pages with little extractable text.",
+    "Reading order in multi-column layouts is the primary engine's, and is not independently verified.",
+    "Visual structure - which cell a value sat in, which column a heading spanned - is not reconstructed. The rendering preserves the layout the primary engine produced, and the original PDF ships beside it so a reader can compare."
+  ]
+}
