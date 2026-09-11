@@ -17,7 +17,10 @@ The ban list is deliberately blunt. A false positive costs a rewrite. A false ne
 words "safe to use" on a document that will be read by someone deciding whether to hand a drum to
 a worker.
 """
-import argparse, re, sys
+import argparse, datetime, os, re, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import read_config as C  # noqa: E402  — one reader for config/jurisdiction.md, not two (AD-15)
 
 VERDICTS = ["CONFORMS", "DOES NOT CONFORM", "CANNOT VERIFY"]
 
@@ -47,6 +50,18 @@ FOREIGN_STANDARD = {
 # harmonised classification list to check Section 3 against, so none is checked and the report has
 # to say so. Stated in two files and enforced in none, until this line.
 US_CLASSIFICATION_PHRASE = re.compile(r"(?i)not\s+assessed\s+for\s+classification\s+correctness")
+
+# When the run was made. Both things that move with the calendar rest on it — the age gate, and
+# every "confirmed current" date a finding carries — so a report that does not say which day it
+# speaks for cannot be re-derived by the person reading it a year later.
+RUN_DATE_ROW = re.compile(r"(?m)^\|\s*Run date\s*\|\s*([^|]+?)\s*\|")
+
+# A house-policy finding rests on a number in config/jurisdiction.md and on nothing else. It has
+# to say which number. rules.md § Two classes of finding asks for exactly this and nothing read
+# it: a finding marked [HOUSE POLICY — no provision] that never names its threshold is indistin-
+# guishable, to a reader, from one that made the number up.
+HOUSE_POLICY_TAG = re.compile(r"(?m)^\s*#*\s*\[[FP]-\d+\]\s*\[HOUSE POLICY")
+POLICY_SETTING = re.compile(r"policy_max_age_years\s*[:=]?\s*`?\s*(\d+)")
 
 
 def report_jurisdiction(text):
@@ -224,6 +239,10 @@ def quote_integrity(text):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("report")
+    ap.add_argument("--config", default=None,
+                    help="the settings file to compare this report against; defaults to "
+                         "config/jurisdiction.md beside this script. Disagreement is a NOTE and "
+                         "never a failure — a filed report keeps the settings it was made under.")
     a = ap.parse_args()
     text = open(a.report, encoding="utf-8").read()
     lines = text.split("\n")
@@ -325,10 +344,30 @@ def main():
                 "was checked (rules.md Stage 5, identity.md blind spots). A report that omits "
                 "that reads as though Section 3 had been checked and held")
 
+    # When the run was made. Read out of the REPORT, for the reason the regime is: a filed
+    # report keeps the day it speaks for, and every "confirmed current" date in it is measured
+    # from that day. A report without one cannot be re-derived by whoever reads it next year.
+    stated_run_date = None
+    run_row = RUN_DATE_ROW.search(text)
+    if not run_row:
+        problems.append(
+            "the header table carries no `Run date` row. The age gate, and every revision this "
+            "report confirms as current, are measured from the day the run was made — a report "
+            "that does not name that day states nothing a reader can re-derive later")
+    else:
+        said = run_row.group(1).strip().strip("`*")
+        try:
+            stated_run_date = datetime.date.fromisoformat(said[:10])
+        except ValueError:
+            problems.append(f"the header gives `Run date | {said[:40]}`, which does not open with "
+                            "an ISO date (YYYY-MM-DD). A date the reader has to interpret is not "
+                            "a date, and two readers interpret 03/04/2026 two ways")
+
     # Only a mark at the head of a line opens a finding. A tag mentioned inside a WHY
     # paragraph is a cross-reference, not a new finding.
     marks = [m.start(1) for m in re.finditer(
         r"(?m)^\s*#*\s*(\[(?:F|P)-\d+\])\s+\[(?:STANDARD|HOUSE POLICY)", text)]
+    declared_policies = set()
     for i, start in enumerate(marks):
         tag = re.match(r"\[(?:F|P)-\d+\]", text[start:]).group()
         if tag.startswith("[P-"):
@@ -341,6 +380,22 @@ def main():
         # installation does, and the two carry different weight with a supplier.
         if "[STANDARD]" in block and "[HOUSE POLICY" in block:
             problems.append(f"{tag} is marked as both a standard violation and a policy gate")
+
+        # A house-policy finding rests on a number in config/jurisdiction.md and on nothing
+        # else, and rules.md asks it to say which number. Nothing read that until now: a
+        # finding marked [HOUSE POLICY — no provision] with no threshold in it is, to a reader,
+        # indistinguishable from one whose threshold was invented. Both shipped age findings
+        # already name it; this is the rule catching up with the practice.
+        if "[HOUSE POLICY" in block:
+            named = POLICY_SETTING.search(block)
+            if not named:
+                problems.append(
+                    f"{tag} is a house-policy finding and never names the setting behind it. "
+                    "rules.md § Two classes of finding, never mixed: a finding that rests on no "
+                    "provision must name `policy_max_age_years` and the number this installation "
+                    "set, so a reader sees the threshold and sees that no law set it")
+            else:
+                declared_policies.add(int(named.group(1)))
 
     # And the findings the scan above cannot see. It only recognises a tag that is FOLLOWED by
     # its class, so a heading that drops the class marker - "### [F-05] BLOCKING — ..." - is not
@@ -380,6 +435,28 @@ def main():
         if message not in seen:
             seen.add(message)
             problems.append(message)
+
+    # What this installation is set to NOW, against what the report says it was run under. This
+    # is a NOTE in both directions and never a failure: audits/ holds eight filed reports and
+    # config/jurisdiction.md can say only one thing, so a gate that failed a record for
+    # disagreeing with today's settings would light up every fresh clone. During a live run the
+    # same note is the auditor being told the report and the file have parted company.
+    configpath = os.path.abspath(a.config) if a.config else None
+    settings, config_problems = C.load(configpath)
+    for p in config_problems:
+        notes.append(f"{p} — this report is judged on what it says, not on that file, but the "
+                     "next run reads it")
+    live = settings["policy_max_age_years"]
+    for said in sorted(declared_policies):
+        if live is not None and said != live:
+            notes.append(f"a house-policy finding here rests on policy_max_age_years: {said}, and "
+                         f"{settings['path']} now says {live}. A filed report keeps the policy it "
+                         "was made under; if this is a live run, the two have parted company")
+    if (stated_run_date and settings["run_date"] not in (None, "auto")
+            and settings["resolved_run_date"] != stated_run_date):
+        notes.append(f"the report was run on {stated_run_date.isoformat()} and "
+                     f"{settings['path']} pins run_date: {settings['run_date']} — a reproduction "
+                     "of this run would measure every age from a different day")
 
     if re.search(r"(?i)\b(?:probably|likely|i think|seems|appears to be fine|looks (?:ok|fine))\b", text):
         notes.append("hedging language found — an audit states what the standard says, "

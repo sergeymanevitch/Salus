@@ -1,9 +1,10 @@
 # tools/ — what runs, and when
 
-Ten scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
+Eleven scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
 exception, and it is the exception that ends runs: the scope gate decides whether this folder holds
 a rulebook for the sheet at all. Around that: one script prepares the sheet, four guard the answer,
-two hold the documentation to what the folder actually is, and two keep the standards current.
+two hold the documentation to what the folder actually is, two keep the standards current, and one
+reads the settings the rest of them stand on.
 
 ## Run for every audit, in this order
 
@@ -106,6 +107,26 @@ Two consequences worth knowing before you write a report.
   columns, so a sentence about the material arrives broken across lines and re-indented. The ban
   patterns treat a space as any run of whitespace and run over the whole text; the line number in
   the failure is recovered from where the match starts.
+
+## The settings, and the one script that reads them
+
+| Script | Job |
+| --- | --- |
+| `read_config.py` | parse `config/jurisdiction.md` — jurisdiction, organisation, `policy_max_age_years`, `run_date` — say what each resolves to, and fail by name on one that cannot be honoured as written: a regime Salus does not ship, a threshold that is not a number, a run date that is not ISO or is in the future. Run it after filling the file in |
+
+It is the **only** place that knows how that file is read. `check_scope.py` imports it for the
+regime and `validate_report.py` for the age policy, because until 2026-09-11 the scope gate carried
+its own parser and two of the four settings were read by nothing at all — honoured because
+`rules.md` says to honour them, which is a rule and not a guard. AD-15: where two scripts must know
+the same thing, there is one implementation.
+
+What it cannot do is tell you the setting is *right*. `jurisdiction: US` parses perfectly in an
+installation that audits for a German legal entity; only the person filling the file in knows.
+`config/CONTEXT.md` is the argument for why that is a person's job.
+
+Gate 3 meets the same settings from the other end. It reads the run date and the age threshold out
+of the **report**, never out of this file — a filed report keeps what it was made under — and
+prints a NOTE, not a failure, when the two have parted company.
 
 ## Run after editing the documentation
 

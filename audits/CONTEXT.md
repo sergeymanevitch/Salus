@@ -9,13 +9,25 @@ together, always: a finding nobody can check against the document it describes i
 | `<sheet>.salus.md` | the rendering the auditor actually read — the extraction, with a line number on every line |
 | `<sheet>.fidelity.json` | the evidence that rendering lost nothing, and the limits of that evidence |
 
-`report.md` opens with a header table, and one row of it is load-bearing rather than descriptive:
+`report.md` opens with a header table, and two rows of it are load-bearing rather than descriptive:
 
     | Jurisdiction (from `config/jurisdiction.md`) | EU |
+    | Run date | 2026-09-11 |
 
-That row is where Gates 2 and 3 read the regime from, and it decides which corpus the findings are
+The first is where Gates 2 and 3 read the regime from, and it decides which corpus the findings are
 allowed to cite. A report without it fails both gates. `tools/CONTEXT.md` § *Which jurisdiction a
 report gate believes* says why the row and not the config file is what a report gate trusts.
+
+The second is the day the run speaks for. Every age in the report, and every *confirmed current*
+date a finding carries, is measured from it, so a report that does not name it states nothing a
+reader can re-derive a year later. ISO, `YYYY-MM-DD`, because `03/04/2026` is two dates. Gate 3
+refuses a report that carries no such row, and refuses a `[HOUSE POLICY — no provision]` finding
+that does not name the `policy_max_age_years` it rests on: a threshold nobody can see is one a
+reader cannot tell from an invented one.
+
+Both rows are read out of the **report** and never out of `config/jurisdiction.md`. A filed record
+keeps the settings it was made under; where they differ from this installation's today, Gate 3
+prints a NOTE and delivers the report.
 
 The line numbers in the rendering are what every `WHERE` line in the report points at. That is the
 whole reason the rendering ships beside the report rather than being regenerated on demand: a

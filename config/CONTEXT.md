@@ -23,9 +23,10 @@ One file, read at `rules.md` Stage 0, before the sheet is opened.
 
 | Script | Reads it | For what |
 | --- | --- | --- |
-| `tools/check_scope.py` | yes, as the authority | it decides about a live sheet, and `rules.md` Stage 0 says the configured regime is the answer |
+| `tools/read_config.py` | yes, and it is the only parser | every other script asks it. It resolves all four settings and fails by name on one that cannot be honoured as written — a regime not shipped, a threshold that is not a number, a `run_date` that is not ISO or lies in the future |
+| `tools/check_scope.py` | yes, as the authority | it decides about a live sheet, and `rules.md` Stage 0 says the configured regime is the answer. Anything else wrong with the file it prints as a NOTE and runs anyway: it decides about the standard, not the age gate |
 | `tools/verify_citations.py` | yes, as a cross-check only | it decides about a *filed report*, and takes the regime from that report's own header row. A disagreement with this file is printed as a NOTE, not a failure |
-| `tools/validate_report.py` | no | same reason: the report's header row is what it reads |
+| `tools/validate_report.py` | yes, as a cross-check only | the report's own header row is what it judges: the run date it was made on, and the threshold any house-policy finding names. Where this file now says something different, that is a NOTE — a filed report keeps the settings it was made under |
 | `tools/extract.py` | no | conversion is regime-blind |
 
 The corpus rule above — EU runs cite the EU corpus, US runs cite `reference/us-osha-hcs/` only — is
@@ -35,7 +36,13 @@ here and repaired by hand.
 
 ## Known limit
 
-**`policy_max_age_years` is still read by no script.** A run that ignores it is caught by a reader
-rather than by a gate — which is the second-best outcome, and is recorded here rather than left to
-be discovered. The gates check that an age finding which *is* made is marked `[HOUSE POLICY — no
-provision]`; nothing checks that one which should have been made was.
+**Nothing computes a sheet's age.** Since 2026-09-11 the settings are parsed and validated
+(`tools/read_config.py`), and a house-policy finding that *is* made must carry its class marker and
+must name the `policy_max_age_years` it rests on — Gate 3 refuses one that does not, and refuses a
+report with no run date to measure any age from. What no script does is read the issue date off the
+sheet and work out whether a finding was owed. A run that should have raised the age gate and did
+not is still caught by a reader rather than by a gate.
+
+That is the second-best outcome and it is written here rather than left to be discovered. It is
+also the honest boundary: the gates check what the report says, and an omission is invisible to
+them — the same limit every Salus run declares about the sheet it audits.

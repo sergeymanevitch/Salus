@@ -12,7 +12,7 @@ in the smallest report that satisfies the report shape, and runs the real citati
 If the documentation drifts away from the standard - a superseded revision, a quote edited in
 the file but not in the example - this fails.
 """
-import os, re, subprocess, sys, tempfile
+import datetime, os, re, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 START = "    [F-03] [STANDARD]"
@@ -40,6 +40,10 @@ def main():
         "| | |", "| --- | --- |",
         "| Jurisdiction (from `config/jurisdiction.md`) | EU |",
         "| Standard applied | Commission Regulation (EU) 2020/878, with CLP Annex VI |",
+        # And the run date, because Gate 3 requires one of every report and this probe is worth
+        # running only while it is shaped like a report. Today's date: the probe is made now, is
+        # checked now, and is deleted at the end of this script.
+        f"| Run date | {datetime.date.today().isoformat()} |",
         "", "## VERDICT: DOES NOT CONFORM", "",
         finding, "", "## What passed", "", passing, "",
         # Three declarations, not one. Gate 3 asks for the declarations rather than the

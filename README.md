@@ -114,6 +114,7 @@ AES-encrypted and pypdf cannot open it without that package.
 ```bash
 # 1. say which regime you audit under — this is never guessed
 $EDITOR config/jurisdiction.md          # set jurisdiction: EU   (or US)
+python3 tools/read_config.py            # what the four settings resolve to, or a failure by name
 
 # 2. convert the sheet, and produce the evidence the conversion lost nothing
 python3 tools/extract.py "test-cases/sds/BG - HCF MSDS 510231_UK_EN.pdf" --outdir audits/my-run
@@ -432,7 +433,7 @@ has no standing to ask anyone else to keep theirs.
 
 ## Claims written to be falsified
 
-Nine claims, each with the command that breaks it. If any of them does not behave as described,
+Ten claims, each with the command that breaks it. If any of them does not behave as described,
 the tool is wrong and the claim should be disbelieved. Six of them are stated in two parts: what
 the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
@@ -588,6 +589,31 @@ only the defects it never had is not being audited.
    since before Gate 0 existed. Both were caught by a reader, which is the failure mode this
    folder argues against everywhere else.
 
+10. **"The settings file is parsed by a script, and a report says which settings it was made
+    under."**
+    `config/jurisdiction.md` sets four things. Break two of them and ask:
+
+        sed 's/^policy_max_age_years:.*/policy_max_age_years: five/' config/jurisdiction.md > /tmp/bad.md
+        python3 tools/read_config.py --config /tmp/bad.md        # exit 1, names the setting
+        sed 's/^run_date:.*/run_date: 2027-01-01/' config/jurisdiction.md > /tmp/bad2.md
+        python3 tools/read_config.py --config /tmp/bad2.md       # exit 1: a date not yet reached
+                                                                 # ages every sheet it reads
+
+    Then take the other end. Strip the threshold out of a house-policy finding, or the run date
+    out of the header, and Gate 3 refuses the report:
+
+        sed 's/`policy_max_age_years: 5`/this installation’s rule/' \
+            audits/2026-09-11-bg-hcf/report.md > /tmp/nothreshold.md
+        python3 tools/validate_report.py /tmp/nothreshold.md     # exit 1
+        sed '/^| Run date |/d' audits/2026-09-11-bg-hcf/report.md > /tmp/nodate.md
+        python3 tools/validate_report.py /tmp/nodate.md          # exit 1
+
+    *Until this was fixed, one of the four settings was read by a script and three by nobody.* A
+    threshold that is not a number, and a run date in the future, were honoured because `rules.md`
+    says to honour them — which is a rule, not a guard. What is still **not** mechanical is stated
+    in `config/CONTEXT.md` § *Known limit*: no script reads an issue date off a sheet, so an age
+    finding that was owed and never made is caught by a reader.
+
 ## Rebuilding everything from source
 
     python3 tools/build_reference.py      # re-download the three standards and regenerate reference/
@@ -620,7 +646,8 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the five checks a run must pass, two docs gates, builder, freshness
+    tools/          extraction, the five checks a run must pass, two docs gates, the settings
+                    reader, builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
     audits/         eight worked runs, with the renderings and fidelity reports they used
 

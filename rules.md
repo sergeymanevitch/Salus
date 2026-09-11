@@ -11,9 +11,16 @@ anyway." A verdict reached on a document you could not read is worse than no ver
 
 ## Stage 0 — Settings
 
-Read `config/jurisdiction.md`. It names the regime this installation audits under: `EU` or `US`.
+Read `config/jurisdiction.md`. It names the regime this installation audits under: `EU` or `US`,
+the house age gate (`policy_max_age_years`), and the day the run speaks for (`run_date`).
 
+- `python3 tools/read_config.py` says what all four settings resolve to, and fails by name on one
+  that cannot be honoured as written. It is the only script that parses that file; the scope gate
+  and Gate 3 both ask it rather than reading the file themselves.
 - Not filled in → **CANNOT VERIFY**, reason: jurisdiction not configured. Stop.
+- The report records the run date and, where a house-policy finding is made, the threshold it
+  rests on. Gate 3 refuses a report that carries neither: a run that cannot be re-derived from
+  what it wrote down is a run nobody can check a year later.
 - Never infer jurisdiction from an IP address, a locale, or where the supplier sits. A reviewer
   in Tel Aviv may be auditing for a German legal entity. The settings file is the answer.
 

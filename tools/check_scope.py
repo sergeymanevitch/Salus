@@ -51,6 +51,9 @@ What this gate CANNOT do, stated here rather than discovered later:
 """
 import argparse, os, re, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import read_config as C  # noqa: E402  — one reader for config/jurisdiction.md, not two (AD-15)
+
 # This folder, found from this script rather than from whoever ran it. config/jurisdiction.md is
 # THIS installation's setting - the file rules.md Stage 0 names - and it does not move when the
 # caller's working directory does. Resolved relative to the caller, as it was until 2026-09-11,
@@ -116,16 +119,18 @@ REGIMES = [
 
 
 def read_jurisdiction(path):
-    if not os.path.exists(path):
-        return None, f"{path} does not exist"
-    text = open(path, encoding="utf-8", errors="replace").read()
-    m = re.search(r"(?m)^\s*jurisdiction:\s*([A-Za-z]+)", text)
-    if not m:
-        return None, f"{path} names no jurisdiction"
-    value = m.group(1).upper()
-    if value not in SHIPPED:
-        return None, f"{path} sets jurisdiction: {value}, which is not a regime Salus ships"
-    return value, None
+    """Which regime this installation audits under, and every other complaint the settings file
+    earns. The parsing lives in read_config.py: this gate used to carry its own copy, and a
+    second copy of "what the settings say" is the drift AD-15 exists to stop.
+
+    Only the jurisdiction stops this gate — rules.md Stage 0 names that one and no other. A
+    policy_max_age_years that is not a number is a real defect and is a matter for Stage 2 and
+    for the report gate, so it is returned to be printed as a NOTE rather than swallowed."""
+    settings, problems = C.load(path)
+    if settings["jurisdiction"] is None:
+        return None, (problems[0] if problems else f"{path} names no jurisdiction"), []
+    rest = [p for p in problems if "jurisdiction" not in p]
+    return settings["jurisdiction"], None, rest
 
 
 def hits(text, patterns):
@@ -156,11 +161,16 @@ def main():
     # rendering stays the caller's argument and is opened exactly as given.
     configpath = os.path.abspath(a.config) if a.config else os.path.join(
         REPO_ROOT, "config", "jurisdiction.md")
-    configured, problem = read_jurisdiction(configpath)
+    configured, problem, other_settings = read_jurisdiction(configpath)
     if problem:
         print(f"FAIL  the scope gate cannot run: {problem}")
         print("      rules.md Stage 0: jurisdiction not configured is CANNOT VERIFY, and the run stops.")
         return 1
+    for note in other_settings:
+        print(f"NOTE  {note}")
+        print("      The scope gate runs anyway — it decides about the standard, not the age "
+              "gate — but\n      python3 tools/read_config.py says what else this file cannot "
+              "honour as written.")
     if not os.path.exists(a.rendering):
         print(f"FAIL  no such rendering: {a.rendering}")
         return 1
