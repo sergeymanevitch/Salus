@@ -109,13 +109,24 @@ def extract_poppler(pdf):
 
 
 def extract_pypdf(pdf):
+    """The independent second engine. Any failure here means the completeness of the shipped
+    rendering could not be checked - it never means the sheet is bad. Every failure mode is
+    folded into one honest answer, 'unavailable', rather than a traceback: a sheet encrypted
+    with AES needs the `cryptography` package, a malformed sheet may raise anything at all,
+    and a reviewer holding a real safety document should be told which of the two happened,
+    not shown a stack trace."""
     try:
         import pypdf
     except ImportError:
         return None, []
-    reader = pypdf.PdfReader(pdf)
-    pages = [(p.extract_text() or "") for p in reader.pages]
-    return "\n".join(pages), pages
+    try:
+        reader = pypdf.PdfReader(pdf)
+        pages = [(p.extract_text() or "") for p in reader.pages]
+        return "\n".join(pages), pages
+    except Exception as e:
+        print(f"  note: the independent engine could not read this file - "
+              f"{type(e).__name__}: {str(e)[:120]}")
+        return None, []
 
 
 def page_density(pages_poppler, pages_pypdf):
@@ -192,9 +203,13 @@ def main():
         report["identifier_divergences"] = []
     elif secondary is None:
         report["verdict"] = "UNCONFIRMED"
-        report["detail"] = ("Only one extraction engine was available, so no independent check of "
-                            "completeness was possible. Install pypdf and re-run before relying on "
-                            "this conversion.")
+        report["detail"] = ("The independent engine produced nothing, so the completeness of this "
+                            "rendering was not checked. Either pypdf is not installed, or it could "
+                            "not read this particular file - an AES-encrypted sheet needs the "
+                            "`cryptography` package. This is a statement about the check, not "
+                            "about the sheet: the rendering may be complete, and nothing here "
+                            "shows that it is. Resolve it before using this conversion in an "
+                            "audit.")
         report["identifier_divergences"] = []
     else:
         ca, cb = char_set(primary), char_set(secondary)

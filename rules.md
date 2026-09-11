@@ -58,6 +58,12 @@ Then open `reference/STANDARDS-LEDGER.md` and compare against the dates, not aga
   to 2027-11-19 under § 1910.1200(j)(3)(i), so most US sheets sit here today.
 - **No declaration** → do not treat this as a failure by itself. Infer the applicable revision
   from the issue date against the ledger, and say in the report that you inferred it.
+- **Compiled for the other regime** → a sheet built to 29 CFR 1910.1200 and audited under
+  `jurisdiction: EU` has not been compiled to Annex II at all, and the reverse holds too. This is a
+  finding, and it cites the article that makes the annex mandatory — for the EU, 2020/878 Article 1,
+  *"Annex II to Regulation (EC) No 1907/2006 is replaced by the text in the Annex to this
+  Regulation."* Report it once, at Stage 3, and continue: the remaining stages still say useful
+  things about a sheet in the wrong format.
 
 ## Stage 4 — Structure: the sixteen sections
 
@@ -76,7 +82,13 @@ a finding. Quote the section number and the heading as it appears in the sheet.
 This is where sheets fail most often, and it is the stage that makes Salus an auditor rather than
 a checklist.
 
-For each ingredient row in Section 3:
+**US runs stop before this stage.** 29 CFR 1910.1200 has no harmonised classification list, and
+none is shipped for it. Under `jurisdiction: US`, record Section 3 as *not assessed for
+classification correctness*, say so in the report's blind spots, and go to Stage 6. Citing CLP
+Annex VI against a US sheet would be a finding under a regulation that does not govern it — the
+exact false finding this folder is built to prevent.
+
+For each ingredient row in Section 3, on an EU run:
 
 1. Read the identifiers: CAS number, EC number, Index number, REACH registration number.
 2. Look the substance up in `reference/eu-clp-annex-vi/annex-vi-table-3-extract.md`, **by CAS or
@@ -124,21 +136,35 @@ basis to, and choosing one would be advising about the material.
 
 Every finding carries five things. A finding missing any of them is not shippable.
 
-    [F-03] Section 3 — classification departs from Annex VI without the Note L basis
+    [F-03] [STANDARD] BLOCKING — Section 3 departs from Annex VI without the Note L basis
       WHAT   Section 3 lists "Distillates (petroleum), hydrotreated heavy naphthenic",
              CAS 64742-52-5, at >=25 - <=50 %, classified "Asp. Tox. 1, H304".
       WHERE  page 2, line 110 of BG - HCF MSDS 510231_UK_EN.pdf
-      RULE   CLP Annex VI, Table 3, Index 649-465-00-7: "Carc. 1B / H350", Notes column "L".
-             Note L: "The harmonised classification as a carcinogen applies unless it can be
-             shown that the substance contains less than 3 % of dimethyl sulphoxide extract as
-             measured by IP 346 [...]"
+      RULE   CLP Annex VI Table 3 row 649-465-00-7 reads, in the hazard-class, hazard-statement
+             and Notes columns: "Carc. 1B | H350 | GHS08 Dgr | H350 | | | L".
+             Note L reads: "The harmonised classification as a carcinogen applies unless it can
+             be shown that the substance contains less than 3 % of dimethyl sulphoxide extract
+             as measured by IP 346"
       WHERE IN THE STANDARD
-             reference/eu-clp-annex-vi/annex-vi-table-3-extract.md, row Index 649-465-00-7
+             reference/eu-clp-annex-vi/annex-vi-table-3-extract.md, row 649-465-00-7
              reference/eu-clp-annex-vi/annex-vi-notes.md, Note L
-             revision: consolidated 02008R1272-20250201, confirmed current 2026-09-11
+             revision: 02008R1272-20260701
+             confirmed current: 2026-09-11
       WHY    The harmonised entry classifies this substance as a category 1B carcinogen. The
              sheet does not carry that classification and does not state that the Note L
              condition was met, so a reader cannot tell whether the departure is lawful.
+
+Two details in that example are not cosmetic, and `tools/verify_citations.py` enforces both.
+
+**One verbatim quote per rule, not several short ones.** The gate pulls quoted strings out of the
+RULE and looks for each in the file named. Two short quotes on one line — `"Carc. 1B", column "L"` —
+are read as one quote running from the first closing mark to the next opening one, which is text
+that appears in no standard anywhere. Quote the row, once, as it reads.
+
+**The example above is itself run through the gate**, by `tools/test_docs_example.py`, which lifts
+it out of this file and puts it through the real citation and boundary checks. It has to be: this
+is the file an auditor reads to learn how to cite, and a format taught here that the gate rejects
+would be worse than no example at all. Run it after editing this section.
 
 `WHERE IN THE STANDARD` is three parts, not one: the file and the row, the revision it belongs
 to, and the date that revision was last confirmed current. A finding is checkable in time as well
@@ -185,6 +211,7 @@ anything is skipped.
 
 Run all three. A report that has not passed them has not been produced.
 
+    python3 tools/test_docs_example.py               # gate 0: does this file still teach a shape that ships
     python3 tools/verify_conversion.py <sheet.pdf>   # gate 1: is the conversion faithful
     python3 tools/verify_citations.py <report.md>    # gate 2: does every citation exist and match
     python3 tools/validate_report.py <report.md>     # gate 3: verdict shape and the hard boundaries

@@ -25,7 +25,7 @@ Three verdicts, and no fourth:
 
 Every finding looks like this. Five parts, all of them required:
 
-```
+```md
 [F-02] [STANDARD] BLOCKING — Section 3 departs from a harmonised classification
   WHAT   Section 3 lists CAS 64742-52-5 at >=25 - <=50 %, classified "Asp. Tox. 1, H304".
   WHERE  page 2, lines 110-114 of the sheet
@@ -63,8 +63,12 @@ writing that no law requires it.
 
 ## Quick start
 
-Python 3 and `pdftotext` (poppler) are required; `pypdf` is strongly recommended, because without
-it the conversion cannot be independently checked.
+**Requirements.** Python 3, `pdftotext` from poppler, and `pypdf`. All three are required, not
+optional: Gate 1's entire claim is that two *independent* engines agree, so without pypdf there is
+no check, only an assertion. Add `cryptography` as well — at least one sheet in the shipped corpus
+is AES-encrypted and pypdf cannot open it without that package.
+
+    pip install pypdf cryptography
 
 ```bash
 # 1. say which regime you audit under — this is never guessed
@@ -189,6 +193,10 @@ Israeli REACH variant. They are what Salus was built against and what every clai
 on. They are not decoration: the rows in `reference/eu-clp-annex-vi/` are selected by the
 identifiers these sheets actually cite.
 
+**The three shipped runs in `audits/` are all EU.** The US path is implemented and documented but
+has not been exercised end to end, though the corpus holds US-format sheets — two Carboline
+`USANSI` variants and the Chevron sheet. Said here rather than left for a reader to discover.
+
 `test-cases/sds-constructed/` holds one file that is **not** a manufacturer's sheet: a real sheet
 rasterised into an image so the CANNOT VERIFY path has a fixture instead of a description. The
 folder's own README records exactly how it was made, so nobody mistakes it for a real document.
@@ -227,7 +235,9 @@ auditor's own account of how the audit went.
 nothing the second one found is missing from what the first one shipped: every distinct character,
 every word and number token, every chemical identifier and hazard code. It also proves the shipped
 Markdown *is* the extraction, by SHA-256, rather than a cleaned-up version of it. It is not a
-rubber stamp: across the twenty-one real sheets it returns PASS on twelve and REVIEW on eight, and
+rubber stamp: across the twenty-one real sheets it returns PASS on eleven, REVIEW on nine, and
+UNCONFIRMED on one — a sheet encrypted with AES, which the second engine cannot open without the
+`cryptography` package, so its completeness is simply not checked and the report says so. And
 `extract.py` states in its own docstring the thing it cannot prove — two engines missing the same
 content agree and are wrong together, which is why per-page text density is reported separately.
 
@@ -235,6 +245,11 @@ content agree and are wrong together, which is why per-page text density is repo
 every finding and looks for that text in the file the finding names. A checker that only re-reads
 the standard proves the standard has not changed; it would happily pass a report whose findings had
 drifted away from the text they cite. This one fails when the report and the standard disagree.
+
+There is a fourth check, smaller and aimed at this repository rather than at a sheet:
+`tools/test_docs_example.py` lifts the worked finding out of `rules.md` and runs the two report
+gates over it, so the file that teaches the citation format cannot drift into teaching one the
+gates reject.
 
 **Gate 3** checks the verdict shape, that every finding declares whether it rests on a provision or
 on house policy, that blind spots are stated, and that no permission language survived.
@@ -286,8 +301,9 @@ summary.
   (g)(3) and (g)(5), which are regulatory text and are shipped in full. Stated again in
   `identity.md` and `reference/README.md`.
 - **CLP Annex VI Table 3 in full.** Several thousand rows. What ships is every row whose identifier
-  appears in the corpus — 44 of them, drawn from 114 distinct CAS and Index numbers. Audit a sheet
-  from outside the corpus and rebuild.
+  appears in the corpus, matched by CAS or by Index number. The count is stated in the header of
+  the file itself, which is generated — this sentence deliberately does not repeat it, because a
+  hand-copied number drifts. Audit a sheet from outside the corpus and rebuild.
 - **Paywalled standards.** ISO 11014 and its like cannot be shipped, so they are not cited.
 - **OCR.** Salus does not guess at pixels. A scanned sheet gets CANNOT VERIFY.
 

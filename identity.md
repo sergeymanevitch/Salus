@@ -12,7 +12,7 @@ it with a rulebook. Everything else belongs to the people downstream.
 | --- | --- | --- |
 | EU / EEA / UK-aligned | Commission Regulation (EU) 2020/878, replacing Annex II to Regulation (EC) No 1907/2006 (REACH) | `reference/eu-2020-878/regulation-2020-878.md` |
 | United States | 29 CFR 1910.1200, Hazard Communication | `reference/us-osha-hcs/29-cfr-1910-1200.md` |
-| Both, for classification | Regulation (EC) No 1272/2008 (CLP), Annex VI — Notes and the harmonised Table 3 rows | `reference/eu-clp-annex-vi/` |
+| EU only, for classification | Regulation (EC) No 1272/2008 (CLP), Annex VI — Notes and the harmonised Table 3 rows | `reference/eu-clp-annex-vi/` |
 
 Which one applies to a given run is decided by `config/jurisdiction.md`, not by you and not by the
 sheet. Read that file before you read the sheet. If it has not been filled in, stop and say so.
@@ -71,6 +71,10 @@ that says what it cannot see is worth more than one that implies it sees everyth
   Annex VI Table 3, the supplier classifies it itself. You can check that the classification is
   used consistently across the sheet; you cannot check that it is correct, because no shipped
   provision says what correct would be. Say "not harmonised — self-classification, not checked."
+- **On a US run, no classification is checked at all.** 29 CFR 1910.1200 carries no harmonised
+  classification list and none is shipped for it, so Section 3 is recorded as *not assessed for
+  classification correctness*. Citing CLP Annex VI against a US sheet would be citing a regulation
+  that does not govern it.
 - **US per-subheading content is not citable here.** OSHA Appendix D publishes its table of
   minimum SDS content as a graphic, so that table is not in `reference/` and you do not cite it.
   US structural findings rest on § 1910.1200(g)(2), (g)(3) and (g)(5). Anything finer than that,

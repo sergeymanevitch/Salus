@@ -11,7 +11,7 @@ If a finding cites a provision, the provision is in this folder. That is the who
 | Folder | What it holds | Size |
 | --- | --- | --- |
 | `eu-2020-878/` | Commission Regulation (EU) 2020/878 in full, including the replacement Annex II with all sixteen sections and their subheadings | ~116 KB |
-| `us-osha-hcs/` | 29 CFR 1910.1200 in full, including Appendices A–D | ~300 KB |
+| `us-osha-hcs/` | 29 CFR 1910.1200 in full, including Appendices A–F | ~300 KB |
 | `eu-clp-annex-vi/` | CLP Annex VI Part 1 Notes in full, and the Table 3 rows for every CAS number that appears in the shipped test sheets | ~26 KB |
 | `STANDARDS-LEDGER.md` | which revision of each standard is in force, with the dates quoted from the standards' own text | — |
 
@@ -30,9 +30,13 @@ states Carc. 1B, H350, Note L" instead of "this classification looks wrong."
 
 **CLP Annex VI Table 3 in full.** The table holds several thousand entries. Shipping all of them
 would make this folder unreadable without making a single finding more checkable. What ships is
-the extract: every row whose CAS number appears in a sheet under `test-cases/sds/` — 43 rows
-drawn from the 102 distinct CAS numbers in the corpus. Audit a sheet from outside the corpus and
-the extract must be rebuilt for it; `tools/build_reference.py` does that in one command.
+the extract: every row whose CAS number **or Annex VI Index number** appears in a sheet under
+`test-cases/sds/`. Matching on both matters — a group entry such as *antimony compounds* carries an
+Index number and no CAS, so a CAS-only sweep would silently miss it. The row count and the number
+of identifiers it was drawn from are stated in the header of the extract itself, which is
+generated; they are not repeated here, because a hand-copied number drifts away from the file it
+describes. Audit a sheet from outside the corpus and the extract must be rebuilt for it;
+`tools/build_reference.py` does that in one command.
 
 **The text of Table D.1 in OSHA Appendix D.** In the current eCFR XML, Appendix D's table of
 minimum SDS content is published as a *graphic* (`er08ja26.033.gif`), not as text. It cannot be
@@ -42,6 +46,15 @@ The limitation is stated again in `identity.md` under Declared blind spots, beca
 only opens one file should still meet it.
 
 **ISO 11014 and other paywalled standards.** They cannot be shipped, so they are not cited.
+
+## One known roughness
+
+In `us-osha-hcs/29-cfr-1910-1200.md` the *body* paragraphs are one per line, so § 1910.1200(g)(2),
+(g)(3) and (g)(5) — the only US provisions this auditor cites — can be opened at the provision.
+The **appendices** are not: the publisher's markup runs each appendix together, so two lines in
+that file are enormous, and Appendix C or F cannot be opened at a point. No shipped finding is
+affected, and no finding may rest on an appendix until this is fixed in
+`tools/build_reference.py`.
 
 ## Rebuilding
 
