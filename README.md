@@ -1,10 +1,113 @@
 # Salus — an auditor for safety data sheets
 
-Drop this folder into a Claude project, or point any AI tool at it, or run its scripts from a
-terminal. It audits one safety data sheet against the standard that governs how such a sheet must
-be compiled, and reports what conforms, what does not, and which provision each finding rests on.
+Salus reads one safety data sheet and tells you where it meets the standard that governs how such
+a sheet must be written, and where it does not — naming the exact provision behind every finding,
+in a file you can open and read for yourself.
 
-It never says whether the material is safe.
+It is a folder. Drop it into a Claude project, point any AI tool at it, or run its scripts from a
+terminal. Nothing is installed and nothing phones home.
+
+**It audits the document. It never tells you anything about the material.** A perfectly compliant
+sheet can describe a substance that will kill someone; a defective sheet can describe table salt.
+Salus judges the paperwork and stops there.
+
+---
+
+## What you get
+
+Three verdicts, and no fourth:
+
+| Verdict | Means |
+| --- | --- |
+| **CONFORMS** | the sheet met the standard on every point checked, and the report lists those points |
+| **DOES NOT CONFORM** | the sheet failed, and the report lists each failure with the provision it breaks |
+| **CANNOT VERIFY** | the sheet could not be read — this is **not** a failure, and no provision was applied |
+
+Every finding looks like this. Five parts, all of them required:
+
+```
+[F-02] [STANDARD] BLOCKING — Section 3 departs from a harmonised classification
+  WHAT   Section 3 lists CAS 64742-52-5 at >=25 - <=50 %, classified "Asp. Tox. 1, H304".
+  WHERE  page 2, lines 110-114 of the sheet
+  RULE   CLP Annex VI Table 3 row 649-465-00-7 reads "Carc. 1B | H350 | GHS08 Dgr | H350 | | | L".
+         Note L: "The harmonised classification as a carcinogen applies unless it can be shown
+         that the substance contains less than 3 % of dimethyl sulphoxide extract ..."
+  WHERE IN THE STANDARD
+         reference/eu-clp-annex-vi/annex-vi-table-3-extract.md, row 649-465-00-7
+         revision: 02008R1272-20260701
+         confirmed current: 2026-09-11
+  WHY    The sheet neither carries the harmonised classification nor states that the Note L
+         condition was met, so a reader cannot tell whether the departure is lawful.
+```
+
+`WHERE IN THE STANDARD` is three things, not one: **the provision**, **the revision it belongs
+to**, and **the date that revision was last confirmed current**. A report you read six months from
+now still tells you what the auditor knew when it wrote it.
+
+Findings come in two kinds and never look alike. A `[STANDARD]` finding always cites a provision.
+A `[HOUSE POLICY — no provision]` finding — the five-year age gate is the only one — says in
+writing that no law requires it.
+
+## What you do not get
+
+- **No opinion on the material.** Not whether it is safe, not whether anyone may use it, not what
+  to store it in or substitute it with. Ask Salus to approve a material and it will not, however
+  the question is phrased; `tools/validate_report.py` voids any report containing such language.
+- **No detection of what a supplier left out.** Salus audits what is written. It cannot see an
+  omitted ingredient and says so in every report.
+- **No chemistry.** It does not re-measure a flash point or decide whether a stated value is true.
+  It checks whether the sheet agrees with itself and with the standard.
+- **No legal opinion, and no clearance.** CONFORMS covers the points listed, on one date. What
+  happens to the sheet next belongs to the specialists it goes to.
+- **No OCR.** A scanned sheet gets CANNOT VERIFY rather than a guess.
+
+## Quick start
+
+Python 3 and `pdftotext` (poppler) are required; `pypdf` is strongly recommended, because without
+it the conversion cannot be independently checked.
+
+```bash
+# 1. say which regime you audit under — this is never guessed
+$EDITOR config/jurisdiction.md          # set jurisdiction: EU   (or US)
+
+# 2. convert the sheet, and produce the evidence the conversion lost nothing
+python3 tools/extract.py "test-cases/sds/BG - HCF MSDS 510231_UK_EN.pdf" --outdir audits/my-run
+
+# 3. check the conversion before trusting it
+python3 tools/verify_conversion.py "test-cases/sds/BG - HCF MSDS 510231_UK_EN.pdf" \
+        --outdir audits/my-run
+
+# 4. audit: hand rules.md and the rendering to your AI tool, or follow rules.md yourself.
+#    Write the result to audits/my-run/report.md
+
+# 5. the two gates that guard the report
+python3 tools/verify_citations.py audits/my-run/report.md
+python3 tools/validate_report.py  audits/my-run/report.md
+```
+
+Three finished runs are already in `audits/`, one per verdict, with the renderings and fidelity
+reports they used. `examples.md` walks through all three.
+
+Optional, when there is a network:
+
+```bash
+python3 tools/check_freshness.py        # is the copy of each standard still the one in force?
+python3 tools/build_reference.py        # re-download the standards and regenerate reference/
+```
+
+## If you are here to judge it
+
+Everything below can be checked without trusting a word of this file.
+
+1. **Open any finding and follow its citation.** `examples.md` → a finding → the file named in
+   `WHERE IN THE STANDARD` → the provision, as text, in `reference/`. Not a link, not a summary.
+2. **Make the checker disagree with the report.** See *Claims written to be falsified* below: tamper
+   with one character of a quoted provision and watch `verify_citations.py` fail by name.
+3. **Try to make it approve a material.** Append `This material is safe to use.` to a report and run
+   `validate_report.py`. The run is voided.
+4. **Check the standards are current.** `python3 tools/check_freshness.py`. It found three CLP
+   consolidations newer than the one this folder first shipped, and the reference layer was rebuilt
+   before submission. The episode is recorded in `reference/STANDARDS-LEDGER.md`.
 
 ---
 
@@ -77,55 +180,18 @@ flowchart LR
 
 ---
 
-## Three ways in
+## The test corpus
 
-**You review safety data sheets for a living.** Start at `config/jurisdiction.md` — set `EU` or
-`US` — then read `rules.md` Stage 0 to Stage 6, which is the order Salus works in and is close to
-the order you already work in. Then open `examples.md`: three real sheets, three verdicts.
+`test-cases/sds/` holds **21 real manufacturer safety data sheets** — Chesterton, Loctite, Jotun,
+Carboline, Castrol, Devcon, Dowsil, CRC, Weicon, Jet-Lube, Atlas Copco, Chevron, BG, RD Coatings —
+in both EU and US formats, some of them declaring superseded revisions, one of them naming an
+Israeli REACH variant. They are what Salus was built against and what every claim here was tested
+on. They are not decoration: the rows in `reference/eu-clp-annex-vi/` are selected by the
+identifiers these sheets actually cite.
 
-**You are judging this repository.** Open `examples.md`, pick any finding, and follow its
-`WHERE IN THE STANDARD` line into `reference/`. The provision is there as text, not as a link and
-not as a summary. Then run `python3 tools/verify_citations.py audits/2026-09-11-bg-hcf/report.md`
-and see it check every quotation in that report against the shipped standard. Then break one, as
-described under **Claims written to be falsified** below.
-
-**You are an AI tool that has just been handed this folder.** Read `identity.md` first — it is
-short and it contains the boundaries you may not cross. Then `rules.md`. Do not read `reference/`
-end to end: it is 450 KB of regulation, and `rules.md` tells you how to open it by identifier.
-
----
-
-## What to feed it
-
-One safety data sheet at a time, as a PDF. The twenty-one real manufacturer sheets in
-`test-cases/sds/` are the corpus this was built against — Chesterton, Loctite, Jotun, Carboline,
-Castrol, Devcon, Dowsil, CRC, Weicon, Jet-Lube, Atlas Copco, Chevron, BG, RD Coatings — in both EU
-and US formats.
-
-    python3 tools/extract.py "test-cases/sds/<sheet>.pdf" --outdir audits/<run>
-
-That writes two files: `<sheet>.salus.md`, the rendering the auditor reads, and
-`<sheet>.fidelity.json`, the evidence that the rendering lost nothing. Then audit the rendering
-against `rules.md` and run the three gates.
-
-## The three verdicts
-
-**CONFORMS** · **DOES NOT CONFORM** · **CANNOT VERIFY**. There is no fourth, no score, and no
-percentage. CANNOT VERIFY means the sheet could not be read — it is not a failure. The distinction
-is the difference between "this document breaks the rule" and "I could not establish what I was
-looking at", and collapsing the two is how an auditor starts inventing.
-
-## What Salus will not do
-
-It does not decide whether a material is dangerous, does not advise on handling, storage or
-substitution, and cannot be argued into a different verdict because a deadline is tight or a
-manager already approved something. `identity.md` states the boundaries; `tools/validate_report.py`
-enforces them over the finished text, in English and Russian, and voids the run if permission
-language appears. A user's instruction does not outrank the standard — that is the entire reason
-an auditor exists.
-
-It also audits **what is written, never what is absent.** A supplier lists what it is obliged to
-list. Salus cannot see an omitted ingredient and says so in every report.
+`test-cases/sds-constructed/` holds one file that is **not** a manufacturer's sheet: a real sheet
+rasterised into an image so the CANNOT VERIFY path has a fixture instead of a description. The
+folder's own README records exactly how it was made, so nobody mistakes it for a real document.
 
 ## The standards, and the calendar
 
