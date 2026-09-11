@@ -284,13 +284,21 @@ is in `reference/`.
 | the configured standard | the audit runs |
 | the *other* standard shipped here (a US sheet under `jurisdiction: EU`, or the reverse) | the audit runs, and Stage 3 reports the mismatch as a finding — both rulebooks are here, so the comparison rests on text |
 | a third regime **and** the configured standard — a sheet written for two markets | the audit runs against the configured one; the third declaration is not a finding |
-| a third regime and nothing else | **stop.** CANNOT VERIFY, out of scope, no findings |
+| a third regime and **neither** standard shipped here | **stop.** CANNOT VERIFY, out of scope, no findings |
 | nothing at all | the audit runs; Stage 3 infers the revision from the issue date and says it inferred it |
 
 It fires on declarations only, never on a country name, an address, a language, an emergency
-number or an inventory list. Two sheets in the corpus mention Canada's WHMIS and both are audited
-normally, because both also declare REACH. Across all twenty-four shipped sheets it stops exactly
-one.
+number or an inventory list. A word on its own is not a declaration either. `REACH` counts only
+where the sheet writes it as one: prepared, compiled or conforming to it, or Annex II named
+beside it. *"Keep out of reach of children"* is GHS precautionary statement P102, printed on
+sheets of every regime including the ones this folder does not hold. Two sheets in the corpus
+declare REACH, 29 CFR 1910.1200 and Canada's WHMIS on a single line, and both are audited
+normally: a sheet naming a rulebook this folder holds is never stopped, whatever else it names.
+Across all twenty-four shipped sheets it stops exactly one.
+
+*Until this was fixed, one sentence disarmed it.* The pattern matched the bare word, so P102
+counted as a declaration of the EU standard, and appending that precautionary line to the Chinese
+sheet turned the stop into an audit — reopening the incident below.
 
 ## The three gates
 
@@ -443,10 +451,16 @@ only the defects it never had is not being audited.
    Delete every `WHERE` line from a copy of a report, the part that locates the defect in the
    sheet, and Gate 2 fails once per finding.
 
-   *Until this was fixed, it did not.* `^\s*WHERE\b` also matched the heading
-   `WHERE IN THE STANDARD`, because the word boundary sits in the space before *IN*. A finding
-   carrying only the latter satisfied both, and the five required parts were enforced as four. The
-   part that went missing was the one a reader cannot reconstruct from the standard.
+   Blank the body of every `WHY` and leave the labels standing: it fails once per finding. Strip
+   the `[STANDARD]` marker off one heading and it fails that heading by name.
+
+   *Until this was fixed, none of the three held.* `^\s*WHERE\b` also matched the heading
+   `WHERE IN THE STANDARD`, because the word boundary sits in the space before *IN*, so a finding
+   carrying only the latter satisfied both and five required parts were enforced as four. An
+   emptied part returned the empty string rather than nothing at all, so the gate asked whether
+   the five words were present rather than the five parts. An unmarked heading fared worse: the
+   block was not failed, it was not seen, and the report left the gate carrying the counts of a
+   shorter report it was not.
 
 6. **"A sheet written to a standard that is not here stops the run, and a report that only lists
    failures does not pass."**
