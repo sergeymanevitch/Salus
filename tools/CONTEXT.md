@@ -15,7 +15,7 @@ one holds the documentation to the format it teaches, and two keep the standards
 | 3 | `check_scope.py` | **the scope gate** · does this folder hold the standard the sheet was compiled to? Reads the sheet's own declaration | the sheet declares a third regime — GB/T, JIS, GOST, SOR/2015-17 — and **neither** of the two standards this folder ships. Exit 2: the verdict is CANNOT VERIFY, out of scope, and **no further stage runs**. A sheet naming 29 CFR 1910.1200 *and* WHMIS has named a rulebook that is here, so it is not stopped — the EU↔US crossing is a finding at Stage 3 |
 | 4 | *the audit itself* | `rules.md` Stages 2–6 — a person or a model, not a script | — |
 | 5 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names, **and that the provision belongs to the corpus the report's own regime may cite** | the report and the standard disagree, in a quoted string of any length; a citation reaches outside the regime's corpus — CLP Annex VI or Annex II in a US report, 1910.1200 in an EU one; the report names no regime at all; a finding heading carries no class marker; one of the five required parts is a label with nothing written under it |
-| 6 | `validate_report.py` | **Gate 3** · verdict shape, finding class, **the regime named in the header**, declared blind spots, the ban on permission language, and that a report which performed checks says what passed | any of those, in English or Russian; also a header that declares one regime and applies the other regime's standard, and a US run that does not record Section 3 as *not assessed for classification correctness* |
+| 6 | `validate_report.py` | **Gate 3** · verdict shape **against the report's own findings**, the class every finding tag declares, **the regime named in the header**, the declarations under *Declared blind spots*, the ban on permission language, and that a report which performed checks says what passed | any of those, in English or Russian; a verdict that contradicts what the report lists — CONFORMS carrying findings, CANNOT VERIFY carrying findings; a finding tag that declares neither class, which is a block nothing checks; a blind-spots heading with nothing under it; quotation marks that do not pair, because quotation is the only thing that exempts a phrase from the ban; also a header that declares one regime and applies the other regime's standard, and a US run that does not record Section 3 as *not assessed for classification correctness* |
 
 The scope gate is third in the order and first in consequence: it is the only script here that can
 end a run before it begins. It exists because on 2026-09-11 a sheet compiled to GB/T 16483 was
@@ -84,6 +84,28 @@ during a live run is the auditor being told the header and the setting have part
 A report that declares **no** regime fails both gates. It is not treated as "fall back to the config":
 if a missing row meant that, deleting one line from a header would be enough to cite any regulation in
 `reference/` against any sheet, and a guard the guarded document can switch off is not a guard.
+
+## What exempts a phrase from Gate 3, and what does not
+
+One thing: quotation marks. A finding has to be able to reproduce a Section 7 that reads
+"safe to use" without being accused of having said it, so quoted spans are blanked before the ban
+scan and everything outside them is the auditor speaking. Nothing else exempts anything — not
+indentation, not a table row, not a blockquote, not the word "quote", and not a disclaimer
+sentence. Each of those was tried here and each was a way of saying the banned thing and being
+told the report may be delivered; the summary table, which is the first thing a reader sees, was
+exempt as a table for as long as the table exemption existed.
+
+Two consequences worth knowing before you write a report.
+
+- **The marks have to pair.** A report with an odd number of `"` is refused without being scanned
+  for anything else. Pairing runs left to right, so one unclosed mark — an inch sign, a citation
+  cut in half — re-pairs every mark after it: the spans that get blanked become the auditor's own
+  prose and the real quotations are handed to the scan. Measured on a shipped report with one mark
+  added to its header table, half the report changed sides. Write an inch mark as `in`.
+- **The scan reads the report, not its lines.** `rules.md` wraps a finding body at about 95
+  columns, so a sentence about the material arrives broken across lines and re-indented. The ban
+  patterns treat a space as any run of whitespace and run over the whole text; the line number in
+  the failure is recovered from where the match starts.
 
 ## Run after editing the documentation
 
