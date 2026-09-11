@@ -152,7 +152,7 @@ they need a terminal; if you are reading this inside a Claude project, see *Wher
 
 1. **Open any finding and follow its citation.** `examples.md` → a finding → the file named in
    `WHERE IN THE STANDARD` → the provision, as text, in `reference/`. Not a link, not a summary.
-   Five of the seven filed runs are walked there: three EU, one US, and one that could not be
+   Five of the eight filed runs are walked there: three EU, one US, and one that could not be
    read at all.
 2. **Make the checker disagree with the report.** See *Claims written to be falsified* below: tamper
    with one character of a quoted provision and watch `verify_citations.py` fail by name.
