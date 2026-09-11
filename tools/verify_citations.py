@@ -25,8 +25,19 @@ A finding marked [HOUSE POLICY - no provision] is held to a different rule, not 
 must state in BOTH its RULE and its WHERE IN THE STANDARD that no provision exists. A policy gate
 that quietly omits its citation and one that declares it has none look identical to a script that
 only counts citations, and they are not the same thing at all.
+
+Before any of that, this runs tools/verify_reference.py over the corpus it is about to quote
+against. Check 3 says the quoted provision appears in the standard, and that sentence means
+nothing unless the standard is the one that was downloaded: edit a date in reference/ and this
+gate would confirm the edit and fail the report for disagreeing with it. Verifying the whole
+corpus costs about 5 ms against this gate's own ~130 ms, and the corpus is read into memory here
+anyway, so the check is unconditional — there is no flag to skip it. If it fails, this gate stops
+and says so, rather than blaming a report that may be perfectly correct.
 """
 import argparse, os, re, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import verify_reference as R  # noqa: E402
 
 REQUIRED = ["WHAT", "WHERE", "RULE", "WHERE IN THE STANDARD", "WHY"]
 
@@ -122,10 +133,28 @@ def main():
     if not os.path.isdir(refdir):
         # Said once, plainly. Without this the corpus simply loads empty and every finding in a
         # correct report is accused of citing a file that does not exist - the failure mode this
-        # gate is being fixed for, wearing a different hat.
+        # gate was fixed for, wearing a different hat.
         print(f"FAIL  no reference corpus at {refdir} \u2014 there is nothing to check the report "
               f"against. Pass --reference if it lives elsewhere.")
         return 1
+
+    # Gate 0 before this gate: the standards on disk must be the ones build_reference.py generated.
+    # This gate's claim is "the quoted provision appears in the standard", and it is worth exactly
+    # what the standard being unmodified is worth. ~4% of this run's cost; there is no skip flag,
+    # because a bypass would put the corpus back into prose.
+    problems, stats = R.audit(refdir)
+    if problems or not stats["provenance_files"]:
+        for p in problems:
+            print(f"FAIL  {p}")
+        if not problems:
+            print(f"FAIL  nothing under {refdir}/ records how it was generated \u2014 there is no "
+                  f"PROVENANCE.md to check the standards against")
+        print("\nThis gate checks a report against the standard it cites. The standard is not the "
+              "one that was generated, so it cannot answer. Restore reference/ with git, or "
+              "rebuild it, and run again. Details: python3 tools/verify_reference.py")
+        return 1
+    print(f"reference corpus verified: {stats['verified']} generated file(s) across "
+          f"{stats['provenance_files']} standard(s) match tools/build_reference.py's hashes.\n")
 
     # The report is the caller's argument, relative or absolute, and is opened as given.
     report = open(a.report, encoding="utf-8").read()

@@ -323,6 +323,16 @@ every finding and looks for that text in the file the finding names. A checker t
 the standard proves the standard has not changed; it would happily pass a report whose findings had
 drifted away from the text they cite. This one fails when the report and the standard disagree.
 
+**Gate 2 stands on `verify_reference.py`, and calls it first.** "The quoted provision appears in the
+standard" is worth exactly as much as the standard being the one that was downloaded, and until this
+script existed nothing ever read the SHA-256 hashes that `build_reference.py` writes into each
+`reference/*/PROVENANCE.md`. A date edited into the regulation would have been *confirmed* by the
+gate whose job is to confirm provisions. So every generated file is rehashed before a single
+citation is checked — 4 files, 444 KB, about 5 ms against the gate's own 130 — and a corpus that
+does not match its own provenance stops the gate with that diagnosis instead of blaming the report.
+There is no flag to skip it. Run `python3 tools/verify_reference.py` on its own to ask the question
+about the folder rather than about a report — it takes no arguments and claim 7 below breaks it.
+
 There is a fourth check, smaller and aimed at this repository rather than at a sheet:
 `tools/test_docs_example.py` lifts the worked finding out of `rules.md` and runs the two report
 gates over it, so the file that teaches the citation format cannot drift into teaching one the
@@ -370,8 +380,8 @@ bad run has disqualified itself from asking anyone else not to.
 
 ## Claims written to be falsified
 
-Six claims, each with the command that breaks it. If any of them does not behave as described,
-the tool is wrong and the claim should be disbelieved. Three of the five are stated in two parts —
+Seven claims, each with the command that breaks it. If any of them does not behave as described,
+the tool is wrong and the claim should be disbelieved. Four of them are stated in two parts —
 what the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
 
@@ -385,8 +395,9 @@ only the defects it never had is not being audited.
        python3 tools/verify_citations.py /tmp/tampered.md
 
    It fails by name: `[F-02] quoted text is not in the cited standard`. The untouched report passes
-   74 checks. Edit the reference file instead of the report and it fails the same way — which is
-   the point: the gate compares the two, and does not trust either alone.
+   74 checks. Edit the reference file instead of the report and the gate fails too, but with the
+   other diagnosis — see claim 7: it names the standard as the thing that moved, which is the
+   point. The gate compares the two, and does not trust either alone.
 
 2. **"Salus cannot be talked into approving a material — and the ban does not depend on where the
    words sit."**
@@ -449,6 +460,27 @@ only the defects it never had is not being audited.
    CONFORMS report, so a DOES NOT CONFORM report listing nothing but failures satisfied the gate —
    the thing this tool is least allowed to be, which is a critique.
 
+7. **"`reference/` is generated, never hand-edited — and that is a mechanism, not a promise."**
+   One command breaks it. Change a character in a shipped standard and ask the corpus about itself:
+
+       python3 -c "p='reference/eu-2020-878/regulation-2020-878.md'; s=open(p).read(); \
+                   open(p,'w').write(s.replace('31 December 2022','31 December 2032',1))"
+       python3 tools/verify_reference.py        # exit 1, names the file and both hashes
+       python3 tools/verify_citations.py audits/2026-09-11-bg-hcf/report.md   # exit 1, same reason
+       git checkout -- reference/eu-2020-878/regulation-2020-878.md           # and it passes again
+
+   Delete a shipped standard instead, or drop a file of your own into a generated folder, and it
+   fails the same way by name. Clean, it reports what it verified: 4 files, 444,018 bytes, three
+   standards, against the hashes `build_reference.py` recorded.
+
+   *Until this existed, nothing ever read those hashes.* Every `PROVENANCE.md` shipped a SHA-256 of
+   every generated file and no script in the folder compared one. A single edited date passed every
+   gate here — worse, the gate that exists to confirm that a quoted provision is real would have
+   confirmed the forgery and failed the honest report for disagreeing with it. Two limits are stated
+   in the script's own docstring rather than left to be discovered: only the *output* hash is
+   checkable offline, because the publisher's bytes are not shipped, and a `PROVENANCE.md` rewritten
+   alongside the edit would pass — that one is caught by the diff, since both files are committed.
+
 ## Rebuilding everything from source
 
     python3 tools/build_reference.py      # re-download the three standards and regenerate reference/
@@ -480,7 +512,8 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the scope gate, the three gates, the docs gate, builder, freshness
+    tools/          extraction, the scope gate, the three gates, the corpus check, the docs gate,
+                    builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
     audits/         eight worked runs, with the renderings and fidelity reports they used
 

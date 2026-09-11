@@ -8,6 +8,17 @@ retrieved and the file produced.
 
 If a finding cites a provision, the provision is in this folder. That is the whole contract.
 
+And the contract is checked, not merely stated: `python3 tools/verify_reference.py` recomputes every
+recorded output hash and fails by name on a file that has changed, a file that has gone, or a file
+that has appeared in a generated folder without a provenance record. Gate 2 runs it before it checks
+a single citation, because "the quoted provision appears in the standard" says nothing unless the
+standard is the one that was downloaded. Three files here are **not** generated output and are never
+hashed: `STANDARDS-LEDGER.md` is maintained by a person, `FRESHNESS-LOG.md` is written by
+`tools/check_freshness.py`, and this file is documentation. Everything else under `reference/` is
+build output — restored with `git checkout`, or rebuilt, never repaired by hand. Offline, only the
+*output* hash can be checked; confirming the source hash means re-running the build with a network,
+and `tools/verify_reference.py` says so in its own docstring.
+
 | Folder | What it holds | Size |
 | --- | --- | --- |
 | `eu-2020-878/` | Commission Regulation (EU) 2020/878 in full, including the replacement Annex II with all sixteen sections and their subheadings | ~116 KB |
