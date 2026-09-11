@@ -225,10 +225,20 @@ Both can produce DOES NOT CONFORM. They must never look alike on the page. A rea
 able to tell at a glance which findings the law requires and which this installation requires,
 because those two carry different weight in a conversation with a supplier.
 
+The marker goes on the heading, beside the tag: `### [F-03] [STANDARD] BLOCKING — ...`. A heading
+that carries the tag and drops the class is not a badly formatted finding, it is an unchecked one:
+until 2026-09-11 neither report gate could see it at all, so nothing asked whether it named a
+provision, quoted one, or cited a file. `tools/validate_report.py` now counts the tags twice, once
+with the class marker and once without, and fails on the difference.
+
 ## Severity
 
 Three levels, and severity never changes the verdict — any finding of either class produces DOES
 NOT CONFORM. Severity orders the list so the reviewer knows what to raise first.
+
+`tools/validate_report.py` holds that first sentence in both directions: a CANNOT VERIFY report
+that lists findings is refused, and so is a CONFORMS report that lists findings. A verdict is not
+a summary a reader may disagree with — it is what the list underneath it comes to.
 
 - **BLOCKING** — the sheet cannot serve its purpose: a missing or empty section, a superseded
   revision past its window, a classification that understates a harmonised entry, a contradiction
@@ -270,7 +280,12 @@ fails both. Write the header before you write the findings; it is what decides w
 findings are allowed to stand on. See `tools/CONTEXT.md` § *Which jurisdiction a report gate believes*
 for why that row, and not the config file, is what the gates trust.
 
-Gate 3 is the one that catches you. It scans the report for permission language in English and
-Russian and voids the run if it finds any. Run these as cold subagents with no knowledge of how
-the audit went, or run them as scripts — either way the checker must not be the thing that made
-the claim.
+Gate 3 is the one that catches you. It scans the whole report — not line by line, because this
+format wraps a sentence across lines — for permission language in English and Russian, and voids
+the run if it finds any. The only exemption is a span inside quotation marks, which is what lets a
+finding reproduce a Section 7 that reads "safe to use" without being read as having said it. Not
+indentation, not a table row, not a blockquote: quotation, and the marks have to pair, so a report
+carrying an odd number of them is refused before it is scanned for anything else.
+
+Run these as cold subagents with no knowledge of how the audit went, or run them as scripts —
+either way the checker must not be the thing that made the claim.

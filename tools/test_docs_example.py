@@ -42,8 +42,13 @@ def main():
         "| Standard applied | Commission Regulation (EU) 2020/878, with CLP Annex VI |",
         "", "## VERDICT: DOES NOT CONFORM", "",
         finding, "", "## What passed", "", passing, "",
+        # Three declarations, not one. Gate 3 asks for the declarations rather than the
+        # heading — identity.md wants them in EVERY report, and this probe is checked by the
+        # same gate a real report is, which is the only reason it is worth running.
         "## Declared blind spots", "",
-        "- This is a probe, not an audit of any sheet.", "",
+        "- This is a probe, not an audit of any sheet, and it judges no document.",
+        "- It carries one finding and one pass, lifted from rules.md; nothing else was checked.",
+        "- Omissions are invisible here as everywhere: the probe reads what the example says.", "",
     ])
 
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
