@@ -36,6 +36,16 @@ SOURCES = {
                     "Accept-Encoding": "gzip"},
         "cache": "clp-consolidated-20260701.xhtml",
     },
+    # California Proposition 65, the statute only. The chapter is served whole by the state's own
+    # legislative information system, which is why it can ship here at all: the OEHHA list of
+    # listed chemicals is behind a bot challenge and cannot be fetched by a script, so it is not
+    # here and reference/ca-prop-65/CONTEXT.md says what that costs an audit.
+    "prop65": {
+        "url": "https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml"
+               "?lawCode=HSC&division=20.&title=&part=&chapter=6.6.&article=",
+        "headers": {"Accept": "text/html", "User-Agent": "Mozilla/5.0"},
+        "cache": "ca-hsc-chapter-6-6.html",
+    },
 }
 
 
@@ -275,6 +285,46 @@ def corpus_cas(pdf_dir):
     return found
 
 
+def leginfo_to_md(raw):
+    """California Health and Safety Code, chapter 6.6, out of leginfo's own markup.
+
+    The state serves each section as an <h6> carrying the section number, followed by the section's
+    text and the italic note recording when it was enacted or amended. That structure is the whole
+    converter: one heading per section, the text under it, and nothing invented in between."""
+    html_text = raw.decode("utf-8", errors="replace")
+    body = re.search(r'<div id="manylawsections">(.*?)</body>', html_text, re.S | re.I)
+    if not body:
+        raise RuntimeError("leginfo markup changed: no id='manylawsections' block")
+    block = body.group(1)
+
+    def clean(fragment):
+        fragment = re.sub(r"<br\s*/?>", "\n", fragment, flags=re.I)
+        fragment = re.sub(r"<[^>]+>", " ", fragment)
+        fragment = html.unescape(fragment)
+        lines = [" ".join(line.split()) for line in fragment.split("\n")]
+        return "\n".join(line for line in lines if line)
+
+    chapter = re.search(r"<h5[^>]*>\s*<b>(.*?)</b>", block, re.S | re.I)
+    out = ["# California Proposition 65 — the statute",
+           "",
+           "Health and Safety Code, Division 20, "
+           + (clean(chapter.group(1)) if chapter else "Chapter 6.6") + ".",
+           "",
+           "This folder holds the **obligation** and not the list. The chemicals \"known to the "
+           "state\" are published by OEHHA under Section 25249.8 and are not shipped here — "
+           "`reference/CONTEXT.md` says what that means for an audit.",
+           ""]
+    parts = re.split(r'<h6[^>]*>\s*<a[^>]*>\s*([\d.]+?)\.?\s*</a>\s*</h6>', block)
+    for number, text in zip(parts[1::2], parts[2::2]):
+        out.append(f"## Section {number}")
+        out.append("")
+        out.append(clean(text))
+        out.append("")
+    if len(parts) < 3:
+        raise RuntimeError("leginfo markup changed: no section headings found")
+    return "\n".join(out).rstrip() + "\n"
+
+
 def write(path, text, source_url, raw, retrieved):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "w", encoding="utf-8").write(text)
@@ -328,6 +378,12 @@ def main():
         raw = fetch("eu878", a.offline)
         write(os.path.join(REF, "eu-2020-878", "regulation-2020-878.md"),
               eurlex_to_md(raw), SOURCES["eu878"]["url"], raw, now)
+
+    if "prop65" in want:
+        print("California Proposition 65 (Health and Safety Code, chapter 6.6) ...")
+        raw = fetch("prop65", a.offline)
+        write(os.path.join(REF, "ca-prop-65", "health-safety-code-chapter-6-6.md"),
+              leginfo_to_md(raw), SOURCES["prop65"]["url"], raw, now)
 
     if "clp" in want:
         print("CLP Annex VI (consolidated 2026-07-01) ...")

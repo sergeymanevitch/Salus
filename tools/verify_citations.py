@@ -87,13 +87,20 @@ NOT_A_STANDARD = {
 
 # Which corpus a report of each regime is entitled to cite. identity.md, config/CONTEXT.md and
 # rules.md Stage 5 all say the same thing in prose; this dict is the same thing said mechanically.
+#
+# ca-prop-65 is the odd one and it is deliberate. It is not a hazard-communication rulebook and it
+# is not a third regime: Proposition 65 is California warning law, and 29 CFR 1910.1200(a)(2)
+# preempts state rules on THIS subject while leaving a rule on another subject alone. So it is
+# citable on a US run, where a sheet's Section 15 may carry a Prop 65 statement, and refused on an
+# EU one, where no finding can rest on it. What it cannot do is decide whether a substance is
+# listed: the OEHHA list is not in reference/, and reference/ca-prop-65/CONTEXT.md says so.
 CORPUS = {
     "EU": ("reference/eu-2020-878/", "reference/eu-clp-annex-vi/"),
-    "US": ("reference/us-osha-hcs/",),
+    "US": ("reference/us-osha-hcs/", "reference/ca-prop-65/"),
 }
 CORPUS_OWNER = {
     "reference/eu-2020-878/": "EU", "reference/eu-clp-annex-vi/": "EU",
-    "reference/us-osha-hcs/": "US",
+    "reference/us-osha-hcs/": "US", "reference/ca-prop-65/": "US",
 }
 # Why each crossing is wrong, said in the terms of the regime it is wrong in. A gate that only
 # reported "wrong folder" would leave the reader to work out what the violation means.

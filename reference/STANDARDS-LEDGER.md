@@ -86,6 +86,33 @@ The section carries amendments through 91 FR 6760 (2026-02-13).
 
 ---
 
+## California — Proposition 65 (Health and Safety Code, chapter 6.6)
+
+Not a hazard-communication standard, and not a revision-dated one in the way the other three are.
+The statute was added by initiative on **1986-11-04** and is amended by ordinary legislation; the
+sections shipped here carry their own enactment notes, which is where a date comes from.
+
+| Date | What it is | Where it is stated |
+| --- | --- | --- |
+| 1986-11-04 | added by initiative, Proposition 65, Sec. 2 | the chapter heading, and each section's own note |
+| 1987-01-01 | operative | the notes to Sections 25249.5 and 25249.6 |
+
+**What is not here, and why it matters more than what is.** Section 25249.8 has the state publish
+the list of chemicals *known to the state to cause cancer or reproductive toxicity*. OEHHA
+maintains it, it changes several times a year, and it is **not shipped**: `oehha.ca.gov` answers a
+script with a bot challenge, and California's open-data portal does not carry it. So this folder
+holds the obligation and not the list, and no finding may claim a warning was owed.
+`reference/ca-prop-65/CONTEXT.md` states the boundary in full.
+
+**The string a finding must carry.** A report citing this statute writes its revision line as
+`California Proposition 65, Health and Safety Code chapter 6.6` — Gate 2 checks that a finding's
+stated revision appears in this ledger, and that is the form it appears in.
+
+Last confirmed current: **2026-09-12**, against
+`https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml?lawCode=HSC&chapter=6.6.`
+
+---
+
 ## How to re-confirm
 
     python3 tools/check_freshness.py          # needs network; compares against the ledger

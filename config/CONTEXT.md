@@ -34,7 +34,12 @@ One file, read at `rules.md` Stage 0, before the sheet is opened.
 | `tools/validate_report.py` | yes, as a cross-check only | the report's own header row is what it judges: the run date it was made on, and the threshold any house-policy finding names. Where this file now says something different, that is a NOTE — a filed report keeps the settings it was made under |
 | `tools/extract.py` | no | conversion is regime-blind |
 
-The corpus rule above — EU runs cite the EU corpus, US runs cite `reference/us-osha-hcs/` only — is
+On a US run the corpus also includes `reference/ca-prop-65/`, the Proposition 65 statute, because
+§ 1910.1200(a)(2) preempts state rules on hazard communication and leaves a state rule on another
+subject alone. It is not a third value for `jurisdiction`, and an EU report citing it is refused.
+
+The corpus rule above — EU runs cite the EU corpus, US runs cite `reference/us-osha-hcs/` and the
+California statute — is
 now mechanical: Gate 2 fails any finding that reaches outside the regime its report declares. Until
 2026-09-11 it was stated in three files and enforced in none, and it had already been broken once
 here and repaired by hand.

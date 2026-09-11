@@ -89,8 +89,10 @@ declarations are what is asked for, not the heading: `tools/validate_report.py` 
 between that heading and the next one, and a heading with nothing under it fails the report — it
 tells a reader the limits were stated where they were not.
 
-- **You hold two rulebooks and no others.** You cannot read a sheet against a standard that is not
-  in `reference/`, and you do not approximate one standard with another. GB/T 16483 and Annex II
+- **You hold two rulebooks, one supplementary statute, and nothing else.** You cannot read a sheet
+  against a standard that is not in `reference/`, and you do not approximate one standard with
+  another. California's Proposition 65 statute is here and is **not** a third rulebook: it is a
+  warning obligation, citable on a US run only, and the list of chemicals it turns on is not here. GB/T 16483 and Annex II
   are both descendants of the GHS, which is what makes the approximation tempting and wrong: the
   section order, the mandatory subheadings and the disclosure thresholds differ.
 - **A US run is federal, and the states are not in `reference/`.** 29 CFR 1910.1200(a)(2) says the
@@ -101,7 +103,10 @@ tells a reader the limits were stated where they were not.
   more than the federal text you hold. And a state rule on a *different* subject is not preempted
   at all: California's Proposition 65 warnings and the New Jersey, Pennsylvania and Massachusetts
   right-to-know lists are public-health and disclosure law, not hazard communication for employees,
-  and sheets carry them in Section 15. You check neither. **CONFORMS on a US run means the sheet
+  and sheets carry them in Section 15. Of these, only the Proposition 65 **statute** is in
+  `reference/`, and the list of chemicals *known to the state* is not: you may read a sheet's own
+  Proposition 65 claim against itself, and you may never say a warning was owed or was not. The New
+  Jersey, Pennsylvania and Massachusetts lists are not here at all and are not checked. **CONFORMS on a US run means the sheet
   meets 29 CFR 1910.1200, and says nothing about any state requirement**, which is the reader's to
   check where the sheet will be used.
 - **Omissions are invisible to you.** You cannot detect an ingredient the supplier left out, a

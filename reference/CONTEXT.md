@@ -24,9 +24,52 @@ and `tools/verify_reference.py` says so in its own docstring.
 | `eu-2020-878/` | Commission Regulation (EU) 2020/878 in full, including the replacement Annex II with all sixteen sections and their subheadings | ~116 KB |
 | `us-osha-hcs/` | 29 CFR 1910.1200 in full, including Appendices A–F | ~308 KB |
 | `eu-clp-annex-vi/` | CLP Annex VI Part 1 Notes in full, and the Table 3 rows for every CAS number that appears in the shipped test sheets | ~26 KB |
+| `ca-prop-65/` | California Health and Safety Code chapter 6.6, the Proposition 65 statute. **Not a rulebook for compiling a sheet, and not a third regime** — a US run may cite it, an EU run may not, and the list of listed chemicals is not here. Its `CONTEXT.md` says what that costs | ~27 KB |
 | `STANDARDS-LEDGER.md` | which revision of each standard is in force, with the dates quoted from the standards' own text | — |
 
-## Why three standards and not two
+## California — Proposition 65, and why a state statute is here at all
+
+Because the federal standard says it may be. 29 CFR 1910.1200(a)(2) preempts state enactments
+*"pertaining to this subject"* — hazard communication for employees — *"except pursuant to a
+Federally-approved state plan."* Proposition 65 is a different subject: it is a warning obligation
+owed to the public, not an employee hazard-communication rule, so it is not preempted and it sits
+beside 1910.1200 rather than under it.
+
+**It is not a third regime.** `config/jurisdiction.md` has two values and this does not add one. A
+run is made under EU or US; on a US run this corpus may be cited, and `tools/verify_citations.py`
+refuses a citation to it from an EU report. There is no `jurisdiction: CA`.
+
+## The list is not here, and that is the whole limit
+
+Section 25249.8 requires the state to publish the chemicals *known to the state to cause cancer or
+reproductive toxicity*. That list is maintained by OEHHA and **is not in this folder**, because it
+cannot be fetched the way everything else here is: `oehha.ca.gov` answers a script with a bot
+challenge rather than the list, and California's open-data portal does not carry it. A summary
+written by hand is exactly what this repository refuses to ship.
+
+What follows for an audit, and it is a hard boundary rather than a caution:
+
+- **Salus cannot say a warning was owed.** That question is *is this substance on the list*, and the
+  list is not here. No finding may assert it, in either direction.
+- **Salus can read what the sheet claims.** A Section 15 that carries a Proposition 65 statement is
+  making a claim, and a claim can contradict the rest of the sheet — a warning for a chemical the
+  sheet's own Section 3 does not disclose, or a "not subject to Proposition 65" line beside an
+  ingredient the sheet itself classifies as a carcinogen. Those are findings about the document,
+  which is the only kind Salus makes.
+- **A finding here cites this statute and never 1910.1200.** The two are separate obligations and
+  Gate 2 enforces the separation.
+
+## What the sections say, in one line each
+
+`25249.5` no discharge of a listed chemical into drinking water · `25249.6` **the warning
+requirement**, and the section a Section 15 statement is usually about · `25249.7` enforcement and
+penalties · `25249.8` the state publishes and revises the list · `25249.9` to `25249.10` exemptions,
+including the twelve-month grace period and the no-significant-risk defence · `25249.11` the
+definitions · `25249.12` to `25249.14` administration and severability.
+
+Read the section, not this table.
+
+## Why a third authority, and not two
 
 2020/878 and 1910.1200 say how a safety data sheet must be *compiled*. Neither of them says what
 the correct hazard classification of a given substance is. Without a third authority, a finding

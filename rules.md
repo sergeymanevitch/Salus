@@ -190,6 +190,62 @@ A blank subheading that is not marked is a finding under (g)(3) in the US and un
 corresponding Annex II requirement in the EU. An empty section is a finding. A missing section is
 a finding. Quote the section number and the heading as it appears in the sheet.
 
+### Section 15, and the layer above the standard
+
+The section most sheets fill with boilerplate, and the one where the two regimes do the opposite of
+each other. Read the regime first.
+
+**EU — Annex II 15.1 and 15.2 are content requirements, and they are checkable.**
+
+> Information shall be provided regarding relevant Union safety, health and environmental
+> provisions … or regarding the national regulatory status of the substance or mixture (including
+> the substances in the mixture), including advice on action that should be taken by the recipient
+> as a result of these provisions.
+
+> This subsection of the safety data sheet shall indicate whether the supplier has carried out a
+> chemical safety assessment for the substance or the mixture.
+
+So on an EU run: a Section 15 that names no Union provision and no national status is a finding
+against 15.1, and a 15.2 that does not say whether a chemical safety assessment was carried out is
+a finding against 15.2 — the subsection asks for an answer, and *absent* is not one. Both are
+`[STANDARD]`, severity **MATERIAL**. A subheading present and empty is already a finding under the
+structure rule above; this is about a subheading that is present, populated, and answers a
+different question than the one asked.
+
+**US — the opposite, and it is stated in the standard itself.**
+
+> Note 2 to paragraph (g)(2): OSHA will not be enforcing information requirements in sections 12
+> through 15, as these areas are not under its jurisdiction.
+
+The heading must be there — Note 1 to the same paragraph puts sections 12 to 15 in the list of
+required headings, in order — and **the content of Section 15 is not enforceable under 29 CFR
+1910.1200**. On a US run, do not raise a `[STANDARD]` finding about what Section 15 says or leaves
+out. A missing or out-of-order heading is still a finding; its contents are not OSHA's to require,
+and a finding that pretends otherwise cites a provision that does not exist.
+
+**The state layer, on a US run only.** `reference/ca-prop-65/` holds California's Proposition 65
+statute, which § 1910.1200(a)(2) does not preempt because it is a different subject: a warning owed
+to the public, not hazard communication owed to an employee. Two things you may do with it, and one
+you may not.
+
+- You **may** read a Proposition 65 statement in Section 15 as a claim the sheet makes, and check
+  it against the rest of the sheet. A warning naming a chemical that Section 3 does not disclose,
+  or a "not subject to Proposition 65" line beside an ingredient the same sheet classifies as a
+  carcinogen, is a contradiction inside one document — which is the only kind of finding Salus
+  makes. Cite `reference/ca-prop-65/health-safety-code-chapter-6-6.md`, Section 25249.6, and never
+  1910.1200: they are separate obligations and Gate 2 enforces the separation.
+- You **may** record, as a declared blind spot rather than a finding, that a sheet destined for
+  California carries no Proposition 65 statement at all.
+- You **may not** say a warning was owed, or that one was not. That question is *is this substance
+  on the state's list*, the list is published by OEHHA under Section 25249.8, and it is **not in
+  `reference/`**. `reference/CONTEXT.md` § *California* says why it cannot be. A finding that
+  asserts it in either direction rests on a list nobody here can open, which is the failure this
+  whole folder is built against.
+
+Other states run their own disclosure regimes — New Jersey, Pennsylvania and Massachusetts
+right-to-know lists among them. None of that text is here, so none of it is audited, and a US
+CONFORMS says nothing about it. `identity.md` declares this.
+
 ### The first page, and the revision trail — EU provision 0.2.5
 
 Annex II 0.2.5, in full, because it carries three obligations and they are not the same one:

@@ -44,6 +44,14 @@ TARGETS = [
      "candidates": True,
      "note": "Annex VI is amended by ATP regulations several times a year. A newer consolidated "
              "version means the Table 3 extract in reference/ is stale."},
+    {"name": "California — Proposition 65 statute (HSC chapter 6.6)",
+     "held": "added 1986-11-04 by initiative; sections as served on 2026-09-12",
+     "probe": "https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml"
+              "?lawCode=HSC&division=20.&title=&part=&chapter=6.6.&article=",
+     "note": "The statute is amended by ordinary legislation and each section carries its own "
+             "enactment note, so a change shows up as a changed section rather than as a new "
+             "version number. This probe says the chapter is still served; it does not say the "
+             "text is unchanged — tools/build_reference.py and the output hash do."},
     {"name": "US — 29 CFR 1910.1200",
      "held": "eCFR point-in-time 2026-09-01",
      "probe": "https://www.ecfr.gov/api/versioner/v1/versions/title-29.json?part=1910&section=1910.1200",

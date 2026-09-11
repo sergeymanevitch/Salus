@@ -20,7 +20,8 @@ Salus judges the paperwork and stops there.
     identity.md     who the auditor is, the three verdicts, the boundaries, the blind spots
     rules.md        how it audits: seven stages, the finding format, severity, how to read
     examples.md     five real audits, covering all three verdicts
-    reference/      the standards themselves, plus the ledger and the freshness log
+    reference/      the standards themselves, California's Proposition 65 statute, the ledger
+                    and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
     tools/          extraction, the age arithmetic, the five checks a run must pass, two docs
@@ -82,12 +83,15 @@ that no law requires it.
   It checks whether the sheet agrees with itself and with the standard.
 - **No legal opinion, and no clearance.** CONFORMS covers the points listed, on one date. What
   happens to the sheet next belongs to the specialists it goes to.
-- **No state-level audits in the US.** § 1910.1200(a)(2) preempts state hazard-communication rules
-  *"except pursuant to a Federally-approved state plan"*, and roughly half the states run one —
-  Cal/OSHA among them. Rules on another subject, such as California's Proposition 65 or the New
-  Jersey and Pennsylvania right-to-know lists, are not preempted and appear in Section 15 of many
-  US sheets. Salus ships neither, so CONFORMS on a US run means the sheet meets the federal
-  standard and says nothing about the state it will be used in.
+- **No state-level audits in the US, and one careful exception.** § 1910.1200(a)(2) preempts state
+  hazard-communication rules *"except pursuant to a Federally-approved state plan"*, and roughly
+  half the states run one, Cal/OSHA among them. Rules on another subject are not preempted at all,
+  and California's **Proposition 65 statute ships** in `reference/ca-prop-65/` for that reason: on a
+  US run a sheet's own Proposition 65 claim can be checked against itself and against § 25249.6.
+  **The list of listed chemicals is not here** — OEHHA serves a bot challenge rather than a file —
+  so Salus can never say a warning was owed, or that one was not. The New Jersey, Pennsylvania and
+  Massachusetts right-to-know lists are not here at all. A US CONFORMS means the sheet meets the
+  federal standard, and says nothing about the state it will be used in.
 - **No third-regime audits.** Salus holds EU 2020/878 and US 29 CFR 1910.1200 and nothing else. A
   sheet compiled to GB/T 16483, JIS Z 7253, GOST 30333 or SOR/2015-17 stops at the scope gate with
   CANNOT VERIFY. It is not audited against the configured standard and scored against obligations
@@ -521,7 +525,7 @@ has no standing to ask anyone else to keep theirs.
 
 ## Claims written to be falsified
 
-Ten claims, each with the command that breaks it. If any of them does not behave as described,
+Eleven claims, each with the command that breaks it. If any of them does not behave as described,
 the tool is wrong and the claim should be disbelieved. Six of them are stated in two parts: what
 the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
@@ -627,8 +631,10 @@ only the defects it never had is not being audited.
        git checkout -- reference/eu-2020-878/regulation-2020-878.md           # and it passes again
 
    Delete a shipped standard instead, or drop a file of your own into a generated folder, and it
-   fails the same way by name. On a clean corpus it reports what it verified: 4 files, 451,184
-   bytes, three standards, against the hashes `build_reference.py` recorded.
+   fails the same way by name. On a clean corpus it reports what it verified — the file count, the
+   byte count and the number of standards — against the hashes `build_reference.py` recorded. The
+   figures are printed by the script rather than repeated here, because a count copied into prose
+   drifts away from the folder it describes.
 
    *Until this existed, nothing ever read those hashes.* Every `PROVENANCE.md` shipped a SHA-256 of
    every generated file and no script in the folder compared one. A single edited date passed every
@@ -727,9 +733,35 @@ only the defects it never had is not being audited.
     `config/CONTEXT.md` § *Known limit*: nothing makes the auditor run the check, and which of the
     dates a sheet states is the one that governs is still read off the sheet by a person.
 
+11. **"California's statute is citable on a US run, refused on an EU one, and it still cannot tell
+    you a warning was owed."**
+    Paste a Proposition 65 finding into a copy of the one US report, and then into an EU one:
+
+        python3 - <<'EOF'
+        f = open('reference/ca-prop-65/health-safety-code-chapter-6-6.md').read()
+        q = f[f.index('No person in the course of doing business shall knowingly and intentionally'):][:242]
+        b = ('### [F-99] [STANDARD] MATERIAL - probe\n\n    WHAT   probe\n    WHERE  probe\n'
+             '    RULE   "' + q + '"\n    WHERE IN THE STANDARD\n'
+             '           reference/ca-prop-65/health-safety-code-chapter-6-6.md, Section 25249.6\n'
+             '           revision: California Proposition 65, Health and Safety Code chapter 6.6\n'
+             '           confirmed current: 2026-09-12\n    WHY    probe\n\n')
+        for src, out in (('audits/2026-09-11-carboguard-us/report.md', '/tmp/p65-us.md'),
+                         ('audits/2026-09-11-bg-hcf/report.md', '/tmp/p65-eu.md')):
+            open(out, 'w').write(open(src).read().replace('## What passed', b + '## What passed', 1))
+        EOF
+        python3 tools/verify_citations.py /tmp/p65-us.md    # passes: the US corpus includes it
+        python3 tools/verify_citations.py /tmp/p65-eu.md    # exit 1, by name: that file is the US corpus
+
+    The statute is in `reference/ca-prop-65/` because § 1910.1200(a)(2) preempts state rules on
+    hazard communication and leaves a state rule on another subject alone. **The list of chemicals
+    it turns on is not here**, and cannot be: OEHHA answers a script with a bot challenge, and
+    California's open-data portal does not carry the list. So Salus can read a sheet's own
+    Proposition 65 claim against the rest of the sheet, and can never say a warning was owed or was
+    not. `rules.md` § *Section 15* draws that line and `reference/CONTEXT.md` explains it.
+
 ## Rebuilding everything from source
 
-    python3 tools/build_reference.py      # re-download the three standards and regenerate reference/
+    python3 tools/build_reference.py      # re-download every source and regenerate reference/
 
 Every file under `reference/` is generated by that script from the publisher's own markup: eCFR
 for the CFR, the EU Publications Office Cellar service for both EU regulations. Each folder carries
