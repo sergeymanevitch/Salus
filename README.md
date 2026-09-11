@@ -79,6 +79,7 @@ handful of Python scripts, and those need a shell. What their absence costs, lin
 | Line-anchored rendering and its fidelity evidence (`extract.py`) | yes | **no** — you supply the text, and nothing proves what it lost |
 | **Gate 1** — conversion fidelity, two independent engines | yes | **no** |
 | **The scope gate** — is the sheet's own standard one this folder holds | yes | **no** — `rules.md` Stage 1b still says to stop, but nothing enforces it, and this is the check whose absence filed a retracted run |
+| **Gate 0** — the shipped standards rehashed against the provenance record | yes | **no** — the corpus you read may have been edited, and nothing says so |
 | **Gate 2** — every citation checked against the file it names | yes | **no** |
 | **Gate 3** — verdict shape, and the ban on saying anything about the material | yes | **no** — the boundary is prose, and prose is not enforcement |
 
@@ -127,7 +128,8 @@ python3 tools/check_scope.py "audits/my-run/BG - HCF MSDS 510231_UK_EN.salus.md"
 # 4. audit: hand rules.md and the rendering to your AI tool, or follow rules.md yourself.
 #    Write the result to audits/my-run/report.md
 
-# 5. the two gates that guard the report
+# 5. the checks that guard the report — Gate 2 runs Gate 0 (the corpus hash
+#    check) itself, so these two commands are three checks
 python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
@@ -230,13 +232,17 @@ at the provision it is about to cite. That is what keeps a run at a few thousand
 
 **Where the standards come from, and how they stay current.** The two maintenance scripts are the
 only parts that need a network. An audit never calls them. That is why the folder works offline,
-and why it still knows how old its own knowledge is.
+and why it still knows how old its own knowledge is. Nothing under `reference/` is written by hand:
+`build_reference.py` generates every file from a citable source and records the SHA-256 of what it
+wrote in a `PROVENANCE.md` beside it. Those hashes are what CHECK 3 above reads — the corpus is not
+trusted because this file says so, it is rehashed before a citation out of it is believed.
 
 ```mermaid
 flowchart LR
     B["build_reference.py"] --> EU["EU 2020/878"]
     B --> US["29 CFR 1910.1200"]
     B --> CLP["CLP Annex VI"]
+    B -->|SHA-256 of every file it wrote| PROV["PROVENANCE.md"]
     F["check_freshness.py"] --> LOG["FRESHNESS-LOG.md"]
     F -.->|reports drift, never edits| LED["STANDARDS-LEDGER.md"]
     EU --> A["the audit"]
@@ -245,8 +251,15 @@ flowchart LR
     LED --> A
     LOG --> A
 
+    EU -.-> G0
+    US -.-> G0
+    CLP -.-> G0
+    PROV -->|hashes read back| G0{"CHECK 3 · Gate 0<br/>verify_reference.py<br/>still what was generated?"}
+
     classDef s fill:#3a2f12,stroke:#e0c268,color:#fff6df
-    class EU,US,CLP,LED,LOG s
+    classDef g fill:#12314f,stroke:#7fb6f0,color:#eaf4ff
+    class EU,US,CLP,LED,LOG,PROV s
+    class G0 g
 ```
 
 ---
@@ -396,10 +409,10 @@ nor US 29 CFR 1910.1200. The run was made under `jurisdiction: EU`, so it was co
 from beginning to end, and it was filed as **DOES NOT CONFORM with eleven findings**.
 
 Every one of those findings was accurate as a reading of the text. All three gates that existed
-that morning passed on it. It
-was still wrong: the eleven findings are not eleven defects. They are **one observation, that the
-wrong ruler was used, restated once per provision**. A reader cannot tell that list apart from a list of real defects, and the document is
-not defective. It is a competent sheet written to a standard this folder does not hold.
+that morning passed on it. It was still wrong: the eleven findings are not eleven defects. They are
+**one observation, that the wrong ruler was used, restated once per provision**. A reader cannot
+tell that list apart from a list of real defects, and the document is not defective. It is a
+competent sheet written to a standard this folder does not hold.
 
 Nothing in the folder caught it. `config/jurisdiction.md` explicitly *instructed* the behaviour: it
 said a sheet compiled for another regime is audited against the configured one and the mismatch

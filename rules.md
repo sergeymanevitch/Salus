@@ -308,16 +308,24 @@ anything is skipped.
 
 ## Before the report leaves
 
-Run all three. A report that has not passed them has not been produced.
+Five checks, in the order a run meets them — `README.md` § *How it works* numbers them on the
+diagram. A report that has not passed every one of them has not been produced.
 
-    python3 tools/test_docs_example.py               # gate 0: does this file still teach a shape that ships
-    python3 tools/verify_conversion.py <sheet.pdf>   # gate 1: is the conversion faithful
-    python3 tools/check_scope.py <sheet.salus.md>    # the scope gate: is there a rulebook for this sheet
-    python3 tools/verify_citations.py <report.md>    # gate 2: does every citation exist and match
-    python3 tools/validate_report.py <report.md>     # gate 3: verdict shape and the hard boundaries
+    python3 tools/verify_conversion.py <sheet.pdf>   # 1 · Gate 1: is the conversion faithful
+    python3 tools/check_scope.py <sheet.salus.md>    # 2 · the scope gate: is there a rulebook for this sheet
+    python3 tools/verify_reference.py                # 3 · Gate 0: is the corpus still what was generated
+    python3 tools/verify_citations.py <report.md>    # 4 · Gate 2: does every citation exist and match
+    python3 tools/validate_report.py <report.md>     # 5 · Gate 3: verdict shape and the hard boundaries
 
-The scope gate is the odd one out and runs at Stage 1b, not here: it guards the run rather than the
-report, and it is the only check that can end an audit before it starts.
+Checks 1 and 2 are not run here at all: they run at Stage 1a and Stage 1b, before there is a report
+to guard, and the scope gate is the only check that can end an audit before it starts. Gate 0 needs
+no place of its own either — Gate 2 calls it before it reads a single citation — and it is listed
+because running it alone asks about the corpus rather than about a report.
+
+A sixth script guards this file rather than a sheet. Run it after editing `rules.md`, not after an
+audit:
+
+    python3 tools/test_docs_example.py               # does rules.md still teach a shape the gates accept
 
 Both report gates read the regime out of the report's header table — the row
 `| Jurisdiction (from `config/jurisdiction.md`) | EU |` — and a report that carries no such row

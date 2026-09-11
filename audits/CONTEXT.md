@@ -40,11 +40,12 @@ easiest to get wrong under pressure.
 
 ## Before a run is added here
 
-Every check must pass on it — `tools/CONTEXT.md` names them and their order, and `README.md` § *How it works* numbers them one to five. A report that has
-not passed them has not been produced, and must not be filed here as though it had.
+Every check must pass on it — `tools/CONTEXT.md` names them and their order, and `README.md`
+§ *How it works* numbers them one to five. A report that has not passed them has not been produced,
+and must not be filed here as though it had.
 
-The scope gate comes before all of them, and it is not a report gate: run
+The scope gate is CHECK 2, and it is not a report gate: run
 `python3 tools/check_scope.py <run>/<sheet>.salus.md` **before** auditing. Exit 2 means this folder
 holds no rulebook for the sheet, and the only run that may be filed is the stop itself —
-`2026-09-11-nye-ts2024-china-scope-stop/` is its shape. Three gates passing is not evidence that a
-run should have been made: the retracted run beside it passed all three.
+`2026-09-11-nye-ts2024-china-scope-stop/` is its shape. Gates passing is not evidence that a run
+should have been made: the retracted run beside it passed every gate that existed that morning.
