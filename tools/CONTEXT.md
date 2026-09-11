@@ -12,9 +12,9 @@ one holds the documentation to the format it teaches, and two keep the standards
 | 0 | `verify_reference.py` | **Gate 0** · rehash every generated file under `reference/` against the SHA-256 recorded in its `PROVENANCE.md` | a shipped standard has changed, is missing, or an unrecorded file has appeared in a generated folder. Gate 2 runs this itself before checking a single citation, so it needs no place in the audit's own sequence — run it alone to ask about the corpus rather than about a report |
 | 1 | `extract.py` | turn the PDF into the line-anchored rendering the auditor reads, and write the evidence that nothing was lost | never — it reports, it does not gate |
 | 2 | `verify_conversion.py` | **Gate 1** · re-derive that evidence from the PDF and the rendering on disk, rather than trusting the JSON | a chemical identifier is missing, or the rendering is no longer the extraction |
-| 3 | `check_scope.py` | **the scope gate** · does this folder hold the standard the sheet was compiled to? Reads the sheet's own declaration | the sheet declares a third regime — GB/T, JIS, GOST, SOR/2015-17 — and not the configured one. Exit 2: the verdict is CANNOT VERIFY, out of scope, and **no further stage runs** |
+| 3 | `check_scope.py` | **the scope gate** · does this folder hold the standard the sheet was compiled to? Reads the sheet's own declaration | the sheet declares a third regime — GB/T, JIS, GOST, SOR/2015-17 — and **neither** of the two standards this folder ships. Exit 2: the verdict is CANNOT VERIFY, out of scope, and **no further stage runs**. A sheet naming 29 CFR 1910.1200 *and* WHMIS has named a rulebook that is here, so it is not stopped — the EU↔US crossing is a finding at Stage 3 |
 | 4 | *the audit itself* | `rules.md` Stages 2–6 — a person or a model, not a script | — |
-| 5 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names, **and that the provision belongs to the corpus the report's own regime may cite** | the report and the standard disagree; a citation reaches outside the regime's corpus — CLP Annex VI or Annex II in a US report, 1910.1200 in an EU one; the report names no regime at all |
+| 5 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names, **and that the provision belongs to the corpus the report's own regime may cite** | the report and the standard disagree, in a quoted string of any length; a citation reaches outside the regime's corpus — CLP Annex VI or Annex II in a US report, 1910.1200 in an EU one; the report names no regime at all; a finding heading carries no class marker; one of the five required parts is a label with nothing written under it |
 | 6 | `validate_report.py` | **Gate 3** · verdict shape, finding class, **the regime named in the header**, declared blind spots, the ban on permission language, and that a report which performed checks says what passed | any of those, in English or Russian; also a header that declares one regime and applies the other regime's standard, and a US run that does not record Section 3 as *not assessed for classification correctness* |
 
 The scope gate is third in the order and first in consequence: it is the only script here that can
@@ -28,13 +28,37 @@ Gate 2 is the one that matters most and is the easiest to get wrong. It reads th
 checker that only re-reads the standard proves the standard has not moved; it would pass a report
 whose findings had drifted away from the text they cite.
 
-It is also the only script here that opens a file nobody named on the command line. The path in a
+It is also one of two scripts here that open a file nobody named on the command line. The path in a
 finding — `reference/eu-2020-878/regulation-2020-878.md` — is relative to **this folder**, not to
 whoever ran the gate, so the gate resolves it from its own location. Two things follow: the answer
 does not change with your working directory, and a report kept outside the repository is checked
 against the corpus that ships here. `--reference` still redirects the corpus, and being a path you
 typed it is resolved against your working directory. If it names nothing, the gate says so once and
 exits 1 rather than reporting every citation in the report as missing.
+
+The scope gate is the other one, and it now uses the same idiom for the same reason:
+`config/jurisdiction.md` is *this installation's* setting, so it is found from the script rather
+than from the caller. Resolved the caller's way it made the gate answer "jurisdiction not
+configured" — a real stop condition, in the words of one — from every directory but the root, about
+a sheet it had not opened. `--config` still redirects, and being a path you typed it is resolved
+against your working directory.
+
+## What Gate 2 counts as present
+
+Two of its checks are about a finding being *there* rather than being *right*, and both were once
+enforced one step short of what they claim.
+
+A finding is recognised by its tag **and** its class marker together — `### [F-03] [STANDARD] …` —
+because a bare tag at the head of a list item is a cross-reference, not a new finding. The cost of
+that is that a heading which simply omits the marker is invisible: no RULE read, no provision
+looked for, no revision, no date, and the same counts out of the gate as if the block did not
+exist. So the tags are scanned a second time on their own, and any tag heading a line without a
+marker behind it fails before any other check runs.
+
+"The five required parts are present" means their bodies are, not their labels. A part whose
+heading is followed by nothing is a missing part and is failed as one, and a part ends at the next
+part, the next heading, or a horizontal rule — otherwise the last part of a finding is bounded only
+by the next finding and takes the section break below it for a body.
 
 Which is why Gate 0 is separate from it and called by it. Reading the report is the right question,
 but it is asked against a file on disk, and a file on disk is only the standard while nobody has

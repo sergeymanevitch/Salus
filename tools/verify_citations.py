@@ -14,11 +14,17 @@ wins and the gate fails.
 
 To see it work, change one character inside a quoted RULE string in a report and re-run.
 
+Before any finding is checked: every [F-n] and [P-n] heading in the report carries its class
+marker. A heading without one is not a finding to this gate, so nothing under it would be read and
+the report would leave here with the counts of a shorter report it is not.
+
 Checks, per finding:
-  1. the five required parts are present
+  1. the five required parts are present, each with something written under it - a label with an
+     empty body is a missing part, not a present one
   2. every reference/ path named exists
   3. every reference/ path named belongs to the corpus the report's own regime may cite
-  4. every quoted string in RULE occurs verbatim in one of those files
+  4. every quoted string in RULE occurs verbatim in one of those files, at any length: "Carc. 1B"
+     and "H350" are checked exactly as a whole sentence is
   5. the revision named matches reference/STANDARDS-LEDGER.md
   6. a confirmation date is present and matches the ledger
 
@@ -186,16 +192,49 @@ def load_reference(refdir):
     return files, bookkeeping
 
 
+# One heading pattern, read two ways. The group is the tag, so a heading found by either scan
+# reports the same name, and the second scan is the first one with its class marker taken off.
+HEADING = r"(?m)^\s*#*\s*(\[(?:F|P)-\d+\])"
+CLASSED = HEADING + r"\s+\[(?:STANDARD|HOUSE POLICY)"
+
+
 def split_findings(text):
     """A finding heading is a line-leading tag followed by its class marker, as in
     '### [F-03] [STANDARD] ...'. A bare tag at the head of a list item is a cross-reference
     and must not open a new block."""
-    marks = [m.start() for m in re.finditer(
-        r"(?m)^\s*#*\s*\[(?:F|P)-\d+\]\s+\[(?:STANDARD|HOUSE POLICY)", text)]
+    marks = [m.start() for m in re.finditer(CLASSED, text)]
     out = []
     for i, s in enumerate(marks):
         e = marks[i + 1] if i + 1 < len(marks) else len(text)
         out.append(text[s:e])
+    return out
+
+
+def unclassed_tags(text):
+    """Tags that open a block of their own and carry no class marker.
+
+    split_findings() recognises a finding by tag AND class marker together, which is right - a
+    bare tag at the head of a list item is a cross-reference, not a new finding. But it means a
+    heading that simply omits the marker is not a finding as far as every check below is
+    concerned: no RULE is read, no provision is looked for, no reference/ path, no revision, no
+    date. The block is not failed, it is not seen, and the report leaves this gate with the same
+    counts as if the block had never been written. One missing marker and a finding ships
+    unchecked.
+
+    So the tags are scanned a second time on their own, and any tag that opens a line without a
+    marker behind it is a failure. The two classes carry different weight in a conversation with a
+    supplier (rules.md, "Two classes of finding, never mixed"), so an unmarked finding is not a
+    formatting slip: it is a finding a reader cannot place.
+    """
+    classed = {m.group(1) for m in re.finditer(CLASSED, text)}
+    seen, out = set(), []
+    for m in re.finditer(HEADING, text):
+        tag = m.group(1)
+        if tag in classed or tag in seen:
+            continue
+        seen.add(tag)
+        line = text[text.rfind("\n", 0, m.start(1)) + 1:].split("\n")[0].strip()
+        out.append((tag, line))
     return out
 
 
@@ -208,9 +247,17 @@ def field(block, name):
     as well, and the five required parts are enforced as four. The part that goes missing is the
     one that locates the defect in the sheet, which is the half of a finding a reader cannot
     reconstruct from the standard.
+
+    A part ends at the next part, at the next markdown heading, at a horizontal rule, or at the
+    end of the block - the last three because the LAST part of a finding, usually WHY, is
+    otherwise bounded only by the next finding, and swallows whatever prose sits between them.
+    Read that way an emptied WHY at the foot of the findings list has the section break below it
+    for a body, and a part that is blank on the page tests as present.
     """
     guard = r"(?! IN THE STANDARD\b)" if name == "WHERE" else ""
-    m = re.search(rf"(?m)^\s*{re.escape(name)}\b{guard}[:\s]*(.*?)(?=^\s*(?:{'|'.join(re.escape(r) for r in REQUIRED)})\b|\Z)",
+    stop = ("|".join(re.escape(r) for r in REQUIRED))
+    m = re.search(rf"(?m)^\s*{re.escape(name)}\b{guard}[:\s]*(.*?)"
+                  rf"(?=^\s*(?:{stop})\b|^\s*#{{1,6}}\s|^\s*(?:---|___|\*\*\*)\s*$|\Z)",
                   block, re.S)
     return m.group(1) if m else None
 
@@ -279,6 +326,24 @@ def main():
     ledger = norm_ws(open(ledger_path, encoding="utf-8").read()) if os.path.exists(ledger_path) else ""
 
     findings = split_findings(report)
+
+    # Before anything is counted: is every finding in this report visible to the checks below?
+    unclassed = unclassed_tags(report)
+    if unclassed:
+        for tag, line in unclassed:
+            print(f"FAIL  {tag}  heads a block and names no class. A finding heading reads "
+                  f"`{tag} [STANDARD] ...`\n      or `{tag} [HOUSE POLICY \u2014 no provision] "
+                  f"...`, and the marker is what this gate reads a\n      finding by. Without it "
+                  f"the block below is not checked at all \u2014 not its RULE, not the\n      "
+                  f"provision it stands on, not the revision or the date \u2014 and this gate "
+                  f"reports the same\n      counts as if it had never been written.")
+            print(f"      the heading as written: {line}")
+        print("\nA reader has to be able to tell at a glance which findings the law requires and "
+              "which this\ninstallation requires: the two carry different weight in a "
+              "conversation with a supplier\n(rules.md, \u201cTwo classes of finding, never "
+              "mixed\u201d). Mark every finding, then run this again.")
+        return 1
+
     if not findings:
         # A CANNOT VERIFY report has no findings by design: the audit stopped before any
         # provision was applied, so there is nothing to cite and citing anything would be
@@ -305,9 +370,21 @@ def main():
 
         for part in REQUIRED:
             checks += 1
-            if field(block, part) is None:
+            body = field(block, part)
+            # A label with nothing under it is a missing part, and field() never returns None for
+            # one - it returns the empty string, or whitespace, or the next label. Tested against
+            # None this loop asked "are the five WORDS present", passed a finding whose WHY had
+            # been emptied out, and reported it as five parts present. rules.md: "Every finding
+            # carries five things. A finding missing any of them is not shippable."
+            if not (body or "").strip():
                 failures += 1
-                print(f"FAIL  {tag}  missing required part: {part}")
+                if body is None:
+                    print(f"FAIL  {tag}  missing required part: {part}")
+                else:
+                    print(f"FAIL  {tag}  {part} is a heading with nothing under it. The five parts "
+                          f"are what make a\n      finding answerable - what was found, where in "
+                          f"the sheet, which provision, where in the\n      standard, and why it "
+                          f"matters. A label carries none of that")
 
         where = field(block, "WHERE IN THE STANDARD") or ""
         named = re.findall(r"reference/[\w./-]+\.md", where)
@@ -344,7 +421,14 @@ def main():
                     print(f"      {why}")
 
         rule = field(block, "RULE") or ""
-        quotes = [q for q in re.findall(r'"([^"]{12,})"', rule)]
+        # Every quoted string, of any length. There was a 12-character floor here, defended on the
+        # ground that two short quotes on one line are read as one quote spanning the gap between
+        # them - which is not true of this regex: the character class cannot cross a quote mark,
+        # so `"Carc. 1B", column "L"` yields two needles, not one. What the floor did was leave
+        # `"Carc. 1B"`, `"H350"`, `"Note L"` unverified, and those are the atoms of a
+        # classification finding: the shortest strings in a report are the ones a reader is least
+        # able to check by eye and the ones a wrong character changes most.
+        quotes = re.findall(r'"([^"]+)"', rule)
         checks += 1
         if house:
             if "none" not in rule.lower()[:80]:
@@ -354,8 +438,10 @@ def main():
             quotes = []
         elif not quotes:
             failures += 1
-            print(f"FAIL  {tag}  RULE quotes nothing from the standard "
-                  f"(a quoted string of 12+ characters is required)")
+            print(f"FAIL  {tag}  RULE quotes nothing from the standard. A finding stands on the "
+                  f"words of a provision,\n      quoted verbatim between double quote marks, so "
+                  f"that a reader can put the report and the\n      standard side by side. A rule "
+                  f"described in the auditor's own words cannot be checked by anyone")
         for q in quotes:
             checks += 1
             needle = norm_ws(q).rstrip(" .[")
