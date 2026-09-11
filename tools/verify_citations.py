@@ -76,6 +76,20 @@ def main():
 
     findings = split_findings(report)
     if not findings:
+        # A CANNOT VERIFY report has no findings by design: the audit stopped before any
+        # provision was applied, so there is nothing to cite and citing anything would be
+        # the error. Any other verdict with no findings is a broken report.
+        if re.search(r"(?m)^\s*#*\s*(?:VERDICT\s*[:\-]\s*)?CANNOT VERIFY\b", report):
+            # The header table legitimately points at the ledger and the freshness log.
+            # What must not appear is a provision cited in the body as a basis for a finding.
+            body = "\n".join(l for l in report.split("\n") if not l.lstrip().startswith("|"))
+            if re.search(r"reference/(?:eu-|us-)[\w./-]+\.md", body):
+                print("FAIL  a CANNOT VERIFY report cites a provision. The audit stopped before "
+                      "any provision was applied; nothing in reference/ should be cited.")
+                return 1
+            print("CANNOT VERIFY report: no findings and no provisions cited, which is correct. "
+                  "Nothing to check here — gate 3 checks the rest.")
+            return 0
         print("FAIL  no findings found in the report — expected blocks headed [F-01], [P-01], ...")
         return 1
 
