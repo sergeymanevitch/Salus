@@ -100,6 +100,14 @@ that one line of boilerplate was enough to suppress the stop on a sheet compiled
 
 Find the date of issue or last revision. Compare with the run date.
 
+    python3 tools/check_age.py <sheet.salus.md>      # the arithmetic, with its evidence
+
+That script reports and does not decide: it prints every date it found with the line it sits on,
+measures the newest one that claims to govern, and says whether a finding is owed. Read its
+evidence rather than its conclusion — it cannot tell a revision date from a print date, and it
+lists any line that claims a date it could not parse, because a date it cannot read is not a date
+the sheet failed to state.
+
 - **≥ 5 years old → DOES NOT CONFORM.** The reason is recorded as a **policy gate**, and it is
   marked in the report as carrying no provision, because neither 2020/878 nor 1910.1200 sets an
   expiry. The rule exists because formulations change faster than sheets are reissued, and a
@@ -300,18 +308,19 @@ a summary a reader may disagree with — it is what the list underneath it comes
 - **MINOR** — formal defects: ordering, numbering, a heading that does not match the wording the
   standard sets.
 
-## Token discipline
+## How the reference layer is read
 
-A run stays under roughly 10,000 tokens because of *how* the reference layer is read, not because
-anything is skipped.
+An access rule, addressed to whoever is doing the audit. Nothing here is a budget: reading a
+standard at the provision is what makes a citation exact, and the saving is a consequence.
 
 - Read the sheet through its extracted `.salus.md`, and read sections by anchor, not the whole file.
 - Read Annex VI **by identifier lookup**. One CAS number, one row. Never load the table.
 - Open `annex-vi-notes.md` only when a row's Notes column is non-empty, and read only that note.
 - Open the standard's text at the provision you are about to cite, not before.
-- The full converted sheet is shipped beside the report so a judge can read all of it. You do not
-  have to, and the two facts are not in tension: what is shipped and what is read are different
-  questions.
+
+What this costs a run, and why the whole converted sheet ships beside a report that did not read
+every line of it, are questions a reader of the project asks rather than an auditor at work.
+`README.md` § *How it works* answers both, once.
 
 ## Before the report leaves
 
@@ -333,7 +342,7 @@ Two scripts guard this file rather than a sheet. Run them after editing `rules.m
 audit:
 
     python3 tools/test_docs_example.py               # does rules.md still teach a shape the gates accept
-    python3 tools/check_diagrams.py                  # does the list above still match README.md and tools/
+    python3 tools/check_docs.py                      # does the list above still match README.md and tools/
 
 Both report gates read the regime out of the report's header table — the row
 `| Jurisdiction (from `config/jurisdiction.md`) | EU |` — and a report that carries no such row

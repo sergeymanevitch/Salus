@@ -11,7 +11,8 @@ file is the route for anyone — or anything — about to *do* an audit with the
    verdict is CANNOT VERIFY and the audit stops there. EU and US are the whole of the scope: a
    sheet compiled to a third country's standard stops at Stage 1b with CANNOT VERIFY, out of
    scope, and is never audited against the configured standard instead.
-3. **`rules.md`** — the seven stages, in order, with the finding format and the token discipline.
+3. **`rules.md`** — the seven stages, in order, with the finding format and the rule for how the
+   reference layer is read.
 4. **`reference/`** — only at the provision you are about to cite. `reference/CONTEXT.md` routes.
 
 **Do not read `reference/` end to end.** It is roughly 450 KB of regulation. `rules.md` says how to

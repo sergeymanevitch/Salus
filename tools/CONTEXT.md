@@ -1,10 +1,10 @@
 # tools/ — what runs, and when
 
-Eleven scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
+Twelve scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
 exception, and it is the exception that ends runs: the scope gate decides whether this folder holds
-a rulebook for the sheet at all. Around that: one script prepares the sheet, four guard the answer,
-two hold the documentation to what the folder actually is, two keep the standards current, and one
-reads the settings the rest of them stand on.
+a rulebook for the sheet at all. Around that: one script prepares the sheet, one does arithmetic
+for the auditor inside a stage, four guard the answer, two hold the documentation to what the
+folder actually is, two keep the standards current, and one reads the settings the rest stand on.
 
 ## Run for every audit, in this order
 
@@ -108,6 +108,25 @@ Two consequences worth knowing before you write a report.
   patterns treat a space as any run of whitespace and run over the whole text; the line number in
   the failure is recovered from where the match starts.
 
+## Run inside the audit, at Stage 2
+
+| Script | Job |
+| --- | --- |
+| `check_age.py` | find every date the rendering states beside a word claiming to be an issue or revision date, measure the newest of them against `run_date` and `policy_max_age_years`, and say whether a house-policy finding is owed. **It reports; it does not gate** — exit 0 either way, non-zero only when the rendering cannot be read |
+
+It is the only script that touches the audit's own reasoning, and the line it does not cross is the
+one AD-15 draws. The subtraction is mechanical: what a date *means* is not. Two things in this
+corpus say why. `03/04/2026` is two dates, so both readings are printed and each convention is
+applied to the whole sheet — a supplier writes dates one way, not both — and where the two fall on
+opposite sides of the limit the script says so and stops. And the shipped Carboguard sheet carries a
+print date one year after its revision date: the gate runs on the revision, and only the words
+beside a date are evidence of which is which.
+
+It also prints what it could not read. A line that claims a date and yields none is listed as such,
+because `rules.md` Stage 2 turns *no date found* into CANNOT VERIFY — a verdict, and too much
+weight for a regex to carry quietly. That guard earned itself immediately: the first version read
+only digits and answered NO DATE FOUND on the sheet that dates itself `Issue date June-30-2025`.
+
 ## The settings, and the one script that reads them
 
 | Script | Job |
@@ -133,7 +152,7 @@ prints a NOTE, not a failure, when the two have parted company.
 | Script | Job |
 | --- | --- |
 | `test_docs_example.py` | lift the worked finding out of `rules.md` and put it through Gates 2 and 3. The file that teaches the citation format must not teach a format the gates reject |
-| `check_diagrams.py` | hold the two diagrams in `README.md` to this folder: every node connected, every decision drawn with its outcomes, every script named real, and the four places that state the sequence of checks — the flowchart, `README.md` § *The gates, one at a time*, `rules.md` § *Before the report leaves*, and the table above — saying the same thing. It does not decide which of them is right; it refuses to let them disagree. `--render` also draws them, when mermaid-cli happens to be installed |
+| `check_docs.py` | hold the documents to this folder. The two diagrams in `README.md`: every node connected, every decision drawn with its outcomes, every script named real. The four places that state the sequence of checks — the flowchart, `README.md` § *The gates, one at a time*, `rules.md` § *Before the report leaves*, and the table above — saying the same thing. And every revision id named anywhere here against `reference/*/PROVENANCE.md`, which is generated output and hashed by Gate 0, so that fact has an owner nobody can edit quietly. It does not decide which statement is right; it refuses to let them disagree. `--render` also draws the diagrams, when mermaid-cli happens to be installed. It was `check_diagrams.py` until the revision check arrived |
 
 ## Run only when there is a network
 

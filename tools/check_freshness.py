@@ -177,9 +177,13 @@ def main():
                         raise Unreachable("eCFR answered, but reported no version dates for this "
                                           "section — the amendment date was not established")
                     entry["result"] = f"latest amendment date reported by eCFR: {dates[-1]}"
+                    # The held date comes off this target's own "held" string and is not
+                    # written here a second time: one fact, one writer. A literal here was the
+                    # third copy of the snapshot date in this folder.
+                    held_date = re.search(r"\d{4}-\d{2}-\d{2}", t["held"]).group()
                     entry["action"] = ("re-run tools/build_reference.py — the held "
                                        "snapshot is older than the latest amendment"
-                                       if dates[-1] > "2026-09-01" else "none")
+                                       if dates[-1] > held_date else "none")
                 entry.setdefault("action", "none")
         except Exception as e:
             unreached += 1

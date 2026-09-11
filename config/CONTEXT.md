@@ -36,13 +36,22 @@ here and repaired by hand.
 
 ## Known limit
 
-**Nothing computes a sheet's age.** Since 2026-09-11 the settings are parsed and validated
-(`tools/read_config.py`), and a house-policy finding that *is* made must carry its class marker and
-must name the `policy_max_age_years` it rests on — Gate 3 refuses one that does not, and refuses a
-report with no run date to measure any age from. What no script does is read the issue date off the
-sheet and work out whether a finding was owed. A run that should have raised the age gate and did
-not is still caught by a reader rather than by a gate.
+**The arithmetic is mechanical; the reading is not, and it is not going to be.** As of 2026-09-11
+the settings are parsed and validated (`tools/read_config.py`); `tools/check_age.py` finds the
+dates a rendering states, measures the newest governing one against `policy_max_age_years` and the
+run date, and says whether a finding is owed; and Gate 3 refuses a report with no run date, or a
+house-policy finding that does not name the threshold it rests on.
 
-That is the second-best outcome and it is written here rather than left to be discovered. It is
-also the honest boundary: the gates check what the report says, and an omission is invisible to
-them — the same limit every Salus run declares about the sheet it audits.
+What remains is a judgement, and `check_age.py` is built to hand it back rather than to make it:
+
+- **A date is not self-describing.** `03/04/2026` is two dates, and the shipped Carboguard sheet
+  carries a print date a year after its revision date. The script prints both readings and the
+  words that stood beside each date; which one governs is read off the sheet by a person.
+- **A parser has blind spots, and a blind spot here is a verdict.** `rules.md` Stage 2 turns *no
+  date found* into CANNOT VERIFY, so the script lists every line that claims a date it could not
+  parse instead of reporting silence as absence.
+- **Nothing forces the auditor to run it.** No gate fails a report for skipping Stage 2; a report
+  that performed checks and says nothing about the age is caught by a reader, as before.
+
+That last one is the honest boundary, and it is the same one every Salus report declares about the
+sheet it audits: the gates check what was written, and an omission is invisible to them.

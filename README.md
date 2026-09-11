@@ -215,19 +215,27 @@ reason — Gate 2 calls Gate 0 before it reads a single citation, because *the q
 in the standard* is worth exactly what the standard being unmodified is worth. A sixth script,
 `test_docs_example.py`, checks this repository rather than a sheet: it puts the worked example out of
 `rules.md` through Gates 2 and 3, so the file that teaches the citation format cannot drift into
-teaching one the gates reject. A seventh, `check_diagrams.py`, holds the two diagrams on this page
-to the folder they describe — both had drifted before it existed, and both were caught by eye
-rather than by a gate.
+teaching one the gates reject. A seventh, `check_docs.py`, holds the documents to the folder they
+describe: the two diagrams on this page, the four places that state the sequence of checks, and
+every revision id this folder names against the one it actually downloaded.
 
 **What each stage does, and what it reads.** No stage reads a reference file through; each opens it
-at the provision it is about to cite. That is what keeps a run at a few thousand tokens.
+at the provision it is about to cite — `rules.md` § *How the reference layer is read* is that rule,
+addressed to the auditor. The consequence, which is this reader's question rather than the
+auditor's: a whole run costs a few thousand tokens, under roughly ten thousand, against a reference
+layer of about 450 KB. Nothing is skipped to get there.
+
+The full converted sheet ships beside every report even so. What is shipped and what is read are
+different questions: the rendering is there so a judge can read all four or forty pages of it and
+check any line the report points at, which is exactly what an auditor reading by anchor cannot be
+asked to have done.
 
 | Stage | Question it answers | Reads |
 | --- | --- | --- |
 | 0 · settings | EU or US? | `config/jurisdiction.md` |
 | 1a · convert | can this sheet be read at all? | the PDF, twice, with two engines |
 | 1b · scope | is it written to a standard this folder holds? | the sheet's own declaration, and `config/jurisdiction.md` |
-| 2 · age gate | older than the house limit? | the sheet's issue date — **no provision, house policy** |
+| 2 · age gate | older than the house limit? | the sheet's issue date — **no provision, house policy**. `check_age.py` does the arithmetic and reports; the reading stays the auditor's |
 | 3 · revision | which revision applies today? | `STANDARDS-LEDGER.md`, `FRESHNESS-LOG.md` |
 | 4 · structure | all 16 sections, numbered, populated? | 2020/878 Annex II, or 1910.1200 (g) |
 | 5 · classification | does Section 3 match the harmonised entry? | CLP Annex VI — **one row per CAS or Index** |
@@ -576,7 +584,7 @@ only the defects it never had is not being audited.
    Delete Gate 0 from the run flowchart and ask the gate:
 
        sed -i.bak '/CHECK 3 — Gate 0/d' README.md
-       python3 tools/check_diagrams.py          # exit 1
+       python3 tools/check_docs.py          # exit 1
        mv README.md.bak README.md
 
    It fails four ways at once: two edges now name a node that does not exist, check 3 is in the
@@ -641,13 +649,13 @@ summary.
 ## The folder
 
     identity.md     who the auditor is, the three verdicts, the boundaries, the blind spots
-    rules.md        how it audits: seven stages, the finding format, severity, token discipline
+    rules.md        how it audits: seven stages, the finding format, severity, how to read
     examples.md     five real audits, covering all three verdicts
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the five checks a run must pass, two docs gates, the settings
-                    reader, builder, freshness
+    tools/          extraction, the age arithmetic, the five checks a run must pass, two docs
+                    gates, the settings reader, builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
     audits/         eight worked runs, with the renderings and fidelity reports they used
 
