@@ -167,7 +167,14 @@ the settings reader, the age arithmetic and both docs gates are standard-library
 whatever Python 3 is already on your machine. Add `cryptography` as well if you want the full test
 corpus: one shipped sheet is AES-encrypted and pypdf cannot open it without that package.
 
-    pip install pypdf cryptography      # Python packages
+    python3 -m venv .venv                    # optional, and the tidy way
+    . .venv/bin/activate
+    pip install -r requirements.txt          # pypdf, and cryptography for one encrypted sheet
+
+`requirements.txt` says which scripts actually need those two and which need nothing at all. The
+environment itself is not shipped: a `.venv` carries compiled wheels and absolute paths for one
+platform, so a committed one works on the machine that built it and nowhere else. Three lines
+rebuild it anywhere.
 
 `pdftotext` is a program, not a package, so pip cannot install it:
 

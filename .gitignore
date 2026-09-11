@@ -7,6 +7,12 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# A virtual environment is machine-specific: compiled wheels, absolute paths, one platform. It is
+# built from requirements.txt in three lines and never committed — a .venv in a repository works
+# on exactly the machine that made it, and silently fails everywhere else.
+.venv/
+venv/
+
 # Renderings and fidelity reports belong to the run that made them, under audits/<run>/.
 # Running extract.py or Gate 1 without --outdir drops them beside the input; never commit those.
 test-cases/**/*.salus.md

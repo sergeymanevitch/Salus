@@ -1,0 +1,31 @@
+# Salus — the whole dependency list, and it is shorter than it looks.
+#
+# TEN OF THE TWELVE SCRIPTS NEED NOTHING FROM THIS FILE. Gate 0, Gate 2, Gate 3, the scope gate,
+# the settings reader, the age arithmetic and both docs gates are standard-library Python and run
+# on whatever Python 3 is already on the machine. If you are here to check a report rather than to
+# convert a PDF, you can stop reading.
+#
+# Only tools/extract.py and tools/verify_conversion.py need anything, and one of the two things
+# they need is not a Python package at all:
+#
+#     pdftotext, from poppler          brew install poppler            (macOS)
+#                                      sudo apt install poppler-utils  (Debian/Ubuntu)
+#                                      sudo dnf install poppler-utils  (Fedora)
+#
+# pip cannot install that, so it is not listed below. Without it, extraction and Gate 1 stop with
+# that instruction rather than a stack trace, and every other script carries on.
+#
+#     python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+#
+# The floors are what matter; the versions after the comment are what this folder was verified
+# against on 2026-09-11, on Python 3.14 and again on the stock macOS Python 3.9.
+
+# The independent second extraction engine. Gate 1's whole claim is that two engines agree, so
+# without this there is no check, only an assertion — and the gate says UNCONFIRMED rather than
+# pretending otherwise.
+pypdf>=5.0            # verified with 6.13.1
+
+# Only to open an encrypted PDF. One sheet in test-cases/ is AES-encrypted; without this package
+# pypdf cannot read it, the independent engine has nothing to say about it, and Gate 1 returns
+# UNCONFIRMED on that sheet alone. Everything else in the corpus is unaffected.
+cryptography>=42.0    # verified with 50.0.1

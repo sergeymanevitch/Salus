@@ -18,8 +18,10 @@ It is a working set, not a curated one, and the awkwardness is the point:
 
 - sheets on a **superseded** revision sit beside sheets on the current one, which is what makes the
   transition-window rule in `rules.md` Stage 3 something other than theory;
-- one sheet is **AES-encrypted** and the independent extraction engine cannot open it without the
-  `cryptography` package — so the conversion gate returns UNCONFIRMED rather than a verdict;
+- one sheet is **AES-encrypted**. With `cryptography` installed the independent engine opens it and
+  Gate 1 returns PASS at 100.0000 % coverage, 49 identifiers, nothing lost — verified 2026-09-11.
+  Without it, that engine has nothing to say and the gate returns UNCONFIRMED on this sheet alone,
+  which is the honest answer and not a defect in the sheet;
 - filenames carry the currency sign as a separator and trademark symbols, which breaks naive path
   handling, and did;
 - several are named **MSDS** rather than SDS, the older term;
