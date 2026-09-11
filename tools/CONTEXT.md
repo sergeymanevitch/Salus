@@ -114,6 +114,13 @@ Two consequences worth knowing before you write a report.
 | --- | --- |
 | `check_age.py` | find every date the rendering states beside a word claiming to be an issue, revision or superseded-version date, eliminate the readings the document itself rules out, measure the newest governing one against `run_date` and `policy_max_age_years`, and say whether a house-policy finding is owed. `--pdf <sheet.pdf>` is optional and adds one elimination. **It reports; it does not gate** — exit 0 either way, non-zero only when the *rendering* cannot be read. An unreadable or absent PDF is not a failure, it is one fewer signal |
 
+It also prints the evidence for **Annex II 0.2.5** on an EU run, because it already holds the
+material: whether the first page carries a date of compilation, whether that date is identified as
+a revision, and whether anything names the version replaced. That is a Stage 4 question, not a
+Stage 2 one — `rules.md` § Stage 4 decides what the evidence means, including the borderline this
+corpus contains and the reason a sheet labelling its date `Date of issue/Date of revision` is not
+in breach for wording it that way. The script prints what is present and what is absent and stops.
+
 It is the only script that touches the audit's own reasoning, and the line it does not cross is the
 one AD-15 draws. The subtraction is mechanical: what a date *means* is not. Two things in this
 corpus say why. `03/04/2026` is two dates, and the shipped Carboguard sheet carries a print date one

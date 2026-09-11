@@ -183,6 +183,54 @@ A blank subheading that is not marked is a finding under (g)(3) in the US and un
 corresponding Annex II requirement in the EU. An empty section is a finding. A missing section is
 a finding. Quote the section number and the heading as it appears in the sheet.
 
+### The first page, and the revision trail — EU provision 0.2.5
+
+Annex II 0.2.5, in full, because it carries three obligations and they are not the same one:
+
+> The date of compilation of the safety data sheet shall be given on the first page. When a safety
+> data sheet has been revised and the new, revised version is provided to recipients, the changes
+> shall be brought to the attention of the recipients in Section 16 of the safety data sheet,
+> unless the changes have been indicated elsewhere. For the revised safety data sheets, the date of
+> compilation, identified as “Revision: (date)”, shall appear on the first page, as well as one or
+> more indications of which version is replaced, such as version number, revision number, or
+> supersedes date.
+
+| | Owed by | Finding when |
+| --- | --- | --- |
+| a date of compilation **on the first page** | every sheet | the first page carries no date of compilation. A date that appears only in Section 16 satisfies Stage 2 and still breaches this: the provision says first page |
+| the changes **brought to the recipient's attention in Section 16** | a revised sheet | neither Section 16 nor anywhere else says what changed. The provision's own escape — *"unless the changes have been indicated elsewhere"* — must be looked for before the finding is made |
+| the first-page date **identified as a revision**, and **one or more indications of which version is replaced** | a revised sheet | the first page identifies no revision date at all, or nothing anywhere names the version replaced — no version number, no revision number, no supersedes date |
+
+**When is a sheet "revised"?** On the evidence it carries: a version number above 1, a stated
+previous issue or supersedes date, or its own revision wording. Where the sheet shows no sign of
+ever having been revised, only the first obligation applies. Never infer a revision from a file
+timestamp or a filename — that is not the document speaking.
+
+**The trap, and this folder has fallen into its twin once already.** The provision illustrates the
+identification with the string `“Revision: (date)”`. That is an illustration of *identifying the
+date as a revision*, not a mandated spelling. A sheet whose first page reads
+`Date of issue/Date of revision: 14/10/2024` has identified its date as a revision date and has
+satisfied the obligation. Raising a finding against every sheet that words it differently would be
+the wrong-ruler mistake of 2026-09-11 wearing a new number — one observation restated once per
+sheet, and unreadable to the person who has to act on it. The finding is owed for **absence**, not
+for wording.
+
+**The borderline, named so nobody has to invent an answer under pressure.** Two sheets in this
+folder's own corpus carry a version number well above 1 — `Version No: 14.1`, `Version 9` — and a
+first page that labels its date `Issue Date` rather than as a revision. Both readings are
+defensible: the date is not identified as a revision, which is what the provision asks for; and a
+version number beside it tells the reader exactly which version that date belongs to, which is what
+the provision is *for*. **Take a reading and write down which one you took**, in the finding if you
+make one and under *Declared blind spots* if you do not. What is not acceptable is deciding it
+silently, or deciding it differently on two sheets in the same run.
+
+Class `[STANDARD]`, severity **MATERIAL**: the sheet is usable, and a reader cannot tell which
+version of it they are holding, which is what the provision exists to prevent.
+
+**US.** There is no first-page requirement. § 1910.1200(g)(2)(xvi) puts the date of preparation or
+last revision in Section 16, and its absence there is the finding. Do not apply 0.2.5 to a US run —
+it is the other regime's rulebook, and Gate 2 will refuse the citation.
+
 ## Stage 5 — Classification: Section 3 against CLP Annex VI
 
 This is where sheets fail most often, and it is the stage that makes Salus an auditor rather than

@@ -395,6 +395,78 @@ def eliminate(found, bound, regime):
     return order, log
 
 
+VERSION = re.compile(r"(?i)\b(?:version|revision)\s*(?:no\.?|number|#)?\s*:?\s*(\d+(?:[.,]\d+)?)\b")
+REVISION_WORD = re.compile(r"(?i)\brevis")
+
+
+def provision_0_2_5(text, found):
+    """Evidence for Annex II 0.2.5, which is a Stage 4 question this script happens to hold the
+    material for. It reports what the first page carries; rules.md § Stage 4 decides what that
+    means, and states the trap: the provision illustrates the identification with the string
+    "Revision: (date)" and does not mandate that spelling. Absence is the finding, not wording."""
+    page_one = text.split("\f")[0] if "\f" in text else text
+    first_page_lines = set(range(1, page_one.count("\n") + 2))
+
+    dated_first_page = [c for c in found if c["line"] in first_page_lines]
+    revision_first_page = [c for c in dated_first_page if REVISION_WORD.search(c["word"])]
+    replaced = [c for c in found if not c["governs"] and PRIOR.search(c["word"])]
+    versions = [v for v in VERSION.findall(text)]
+    # What counts as evidence that the sheet HAS been revised, and what does not. The word
+    # "revision" on the first page is not evidence: every EU sheet labels its date "Date of
+    # issue/Date of revision" whether or not it has ever been revised, and the Chesterton Part B
+    # sheet in this corpus states the same day for both. Reading that as a revision would raise a
+    # 0.2.5 finding against a first edition — the wrong-ruler mistake, one restated per sheet.
+    issued = {d for c in found if c["governs"] and not REVISION_WORD.search(c["word"])
+              for d in c["readings"].values()}
+    revised_dates = {d for c in found if c["governs"] and REVISION_WORD.search(c["word"])
+                     for d in c["readings"].values()}
+    moved_on = bool(issued and revised_dates and (revised_dates - issued))
+    revised = bool(replaced or [v for v in versions if _above_one(v)] or moved_on)
+    return {"page_one_dates": dated_first_page, "page_one_revision": revision_first_page,
+            "replaced": replaced, "versions": versions, "revised": revised}
+
+
+def _above_one(v):
+    try:
+        return float(v.replace(",", ".")) > 1
+    except ValueError:
+        return False
+
+
+def print_0_2_5(ev, regime):
+    print("\nProvision 0.2.5 — the first page and the revision trail (EU only; rules.md Stage 4 "
+          "decides, this is the evidence)")
+    if regime != "EU":
+        print("  not applicable: this run is US, and 0.2.5 is the other regime's rulebook. "
+              "§ 1910.1200(g)(2)(xvi) puts the date in Section 16 instead.")
+        return
+    def mark(ok):
+        return "present" if ok else "NOT FOUND"
+    print(f"  a date of compilation on the first page: {mark(ev['page_one_dates'])}"
+          + (f" — line {ev['page_one_dates'][0]['line']}" if ev["page_one_dates"] else ""))
+    if not ev["revised"]:
+        print("  the sheet carries no sign of ever having been revised — no version above 1, no "
+              "superseded version, no revision wording. The two obligations below do not apply.")
+        return
+    print(f"  that date identified as a revision: {mark(ev['page_one_revision'])}"
+          + (f" — \"{ev['page_one_revision'][0]['word']}\"" if ev["page_one_revision"] else ""))
+    named = ev["replaced"] or ev["versions"]
+    print(f"  an indication of which version is replaced: {mark(named)}"
+          + (f" — {ev['replaced'][0]['word'] if ev['replaced'] else 'version ' + ev['versions'][0]}"
+             if named else ""))
+    if not ev["page_one_revision"] and not named:
+        print("  Neither is on this sheet. rules.md Stage 4 — read it before making the finding.")
+    elif not named:
+        print("  The revision trail is what is missing: nothing names the version replaced. "
+              "rules.md Stage 4 decides; this script does not.")
+    elif not ev["page_one_revision"]:
+        print("  The sheet says it has been revised and its first-page date is not identified as "
+              "a revision. That is the borderline case rules.md Stage 4 names — read it, take a "
+              "reading, and write down which one you took. This script will not take it for you.")
+    else:
+        print("  Both are present. No 0.2.5 finding on this evidence.")
+
+
 def age_in_years(when, on):
     years = on.year - when.year - ((on.month, on.day) < (when.month, when.day))
     months = (on.month - when.month - (on.day < when.day)) % 12
@@ -540,6 +612,8 @@ def main():
               "the answer above holds for both. Record whichever the sheet's own language makes "
               "right, and say in the report that the sheet writes it ambiguously. The verdict "
               "does not turn on it here; the date you quote does.")
+
+    print_0_2_5(provision_0_2_5(text, found), regime)
 
     print("\nWhat this cannot tell you: whether the words beside a date meant what they say, and "
           "whether a date it never found is printed somewhere it could not parse. If one reading "

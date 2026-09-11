@@ -283,7 +283,7 @@ asked to have done.
 | 1b · scope | is it written to a standard this folder holds? | the sheet's own declaration, and `config/jurisdiction.md` |
 | 2 · age gate | older than the house limit? | the sheet's issue date — **no provision, house policy**. `check_age.py` does the arithmetic and reports; the reading stays the auditor's |
 | 3 · revision | which revision applies today? | `STANDARDS-LEDGER.md`, `FRESHNESS-LOG.md` |
-| 4 · structure | all 16 sections, numbered, populated? | 2020/878 Annex II, or 1910.1200 (g) |
+| 4 · structure | all 16 sections, numbered, populated? **and, EU only, the first page and the revision trail** | 2020/878 Annex II incl. **0.2.5**, or 1910.1200 (g) |
 | 5 · classification | does Section 3 match the harmonised entry? | CLP Annex VI — **one row per CAS or Index** |
 | 6 · consistency | does the sheet contradict itself? | 2020/878 Annex II, section by section |
 
