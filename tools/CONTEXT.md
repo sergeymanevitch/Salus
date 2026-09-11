@@ -1,9 +1,9 @@
 # tools/ — what runs, and when
 
-Nine scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
+Ten scripts. Nothing here decides anything about a sheet — the audit is the reading — with one
 exception, and it is the exception that ends runs: the scope gate decides whether this folder holds
 a rulebook for the sheet at all. Around that: one script prepares the sheet, four guard the answer,
-one holds the documentation to the format it teaches, and two keep the standards current.
+two hold the documentation to what the folder actually is, and two keep the standards current.
 
 ## Run for every audit, in this order
 
@@ -112,6 +112,7 @@ Two consequences worth knowing before you write a report.
 | Script | Job |
 | --- | --- |
 | `test_docs_example.py` | lift the worked finding out of `rules.md` and put it through Gates 2 and 3. The file that teaches the citation format must not teach a format the gates reject |
+| `check_diagrams.py` | hold the two diagrams in `README.md` to this folder: every node connected, every decision drawn with its outcomes, every script named real, and the four places that state the sequence of checks — the flowchart, `README.md` § *The gates, one at a time*, `rules.md` § *Before the report leaves*, and the table above — saying the same thing. It does not decide which of them is right; it refuses to let them disagree. `--render` also draws them, when mermaid-cli happens to be installed |
 
 ## Run only when there is a network
 

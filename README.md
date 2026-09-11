@@ -214,7 +214,9 @@ reason — Gate 2 calls Gate 0 before it reads a single citation, because *the q
 in the standard* is worth exactly what the standard being unmodified is worth. A sixth script,
 `test_docs_example.py`, checks this repository rather than a sheet: it puts the worked example out of
 `rules.md` through Gates 2 and 3, so the file that teaches the citation format cannot drift into
-teaching one the gates reject.
+teaching one the gates reject. A seventh, `check_diagrams.py`, holds the two diagrams on this page
+to the folder they describe — both had drifted before it existed, and both were caught by eye
+rather than by a gate.
 
 **What each stage does, and what it reads.** No stage reads a reference file through; each opens it
 at the provision it is about to cite. That is what keeps a run at a few thousand tokens.
@@ -430,7 +432,7 @@ has no standing to ask anyone else to keep theirs.
 
 ## Claims written to be falsified
 
-Eight claims, each with the command that breaks it. If any of them does not behave as described,
+Nine claims, each with the command that breaks it. If any of them does not behave as described,
 the tool is wrong and the claim should be disbelieved. Six of them are stated in two parts: what
 the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
@@ -569,6 +571,23 @@ only the defects it never had is not being audited.
    been broken once in this folder, with CLP Annex VI cited against a US sheet, and was found by a
    person reading the report, in an architecture review, not by anything that runs.
 
+9. **"The diagrams on this page are held to the folder by a script, not by eye."**
+   Delete Gate 0 from the run flowchart and ask the gate:
+
+       sed -i.bak '/CHECK 3 — Gate 0/d' README.md
+       python3 tools/check_diagrams.py          # exit 1
+       mv README.md.bak README.md
+
+   It fails four ways at once: two edges now name a node that does not exist, check 3 is in the
+   two command lists and in no node, and `tools/CONTEXT.md` calls `verify_reference.py` a gate
+   that the flowchart does not show. The same gate refuses a decision node with no outgoing edge
+   — a gate drawn as deciding nothing — and a `CHECK n` node that names no script.
+
+   *Until this was written, nothing checked either diagram.* Both had drifted: the run flowchart
+   still showed the three gates of one morning, and the maintenance diagram had not been touched
+   since before Gate 0 existed. Both were caught by a reader, which is the failure mode this
+   folder argues against everywhere else.
+
 ## Rebuilding everything from source
 
     python3 tools/build_reference.py      # re-download the three standards and regenerate reference/
@@ -601,7 +620,7 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the five checks a run must pass, the docs gate, builder, freshness
+    tools/          extraction, the five checks a run must pass, two docs gates, builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
     audits/         eight worked runs, with the renderings and fidelity reports they used
 

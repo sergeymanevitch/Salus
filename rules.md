@@ -322,10 +322,11 @@ to guard, and the scope gate is the only check that can end an audit before it s
 no place of its own either — Gate 2 calls it before it reads a single citation — and it is listed
 because running it alone asks about the corpus rather than about a report.
 
-A sixth script guards this file rather than a sheet. Run it after editing `rules.md`, not after an
+Two scripts guard this file rather than a sheet. Run them after editing `rules.md`, not after an
 audit:
 
     python3 tools/test_docs_example.py               # does rules.md still teach a shape the gates accept
+    python3 tools/check_diagrams.py                  # does the list above still match README.md and tools/
 
 Both report gates read the regime out of the report's header table — the row
 `| Jurisdiction (from `config/jurisdiction.md`) | EU |` — and a report that carries no such row
