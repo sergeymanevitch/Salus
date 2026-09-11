@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Gate 2 — does every citation in a report exist, and does the quoted text match the standard?
 
-    python3 tools/verify_citations.py <report.md> [--reference reference]
+    python3 tools/verify_citations.py <report.md> [--reference <dir>]
+
+Run it from anywhere. The answer does not depend on your working directory: see REPO_ROOT below.
 
 This is the gate that reads the AUDITOR'S OWN OUTPUT. A checker that only proves the reference
 folder still says what it said proves nothing about the report: it would pass a report whose
@@ -28,6 +30,21 @@ import argparse, os, re, sys
 
 REQUIRED = ["WHAT", "WHERE", "RULE", "WHERE IN THE STANDARD", "WHY"]
 
+# The Salus folder, derived from this script's own location - tools/ sits at the root, so the root
+# is one directory up from this file. A path named in a finding,
+# `reference/eu-2020-878/regulation-2020-878.md`, is named relative to THAT folder. It is not
+# relative to whoever ran the gate, and resolving it against the caller's working directory is how
+# this gate once reported twenty-six failures in a report that has none, to anyone who ran it from
+# anywhere but the root - accusing the report of a defect it did not have, which is the one thing a
+# gate must never do.
+#
+# The other candidate anchor was the report's own directory, and it is rejected deliberately: a
+# report may legitimately live outside this repository - a judge auditing their own sheet in /tmp
+# and pointing the gate at it - and anchoring there would leave that run with no corpus, or with
+# whatever corpus happened to sit beside the report. The standards this gate checks against are the
+# ones that ship with the gate. realpath, not abspath, so the anchor survives a symlink on PATH.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
 
 def norm_ws(s):
     return re.sub(r"\s+", " ", s.replace(" ", " ")).strip()
@@ -44,16 +61,21 @@ NOT_A_STANDARD = {
 
 
 def load_reference(refdir):
+    """Key every file by its path relative to the folder that CONTAINS the corpus, so the keys read
+    the way a finding writes them - `reference/eu-2020-878/regulation-2020-878.md` - from any
+    working directory, and so an explicit --reference elsewhere is keyed the same way."""
+    base = os.path.dirname(os.path.abspath(refdir))
     files, bookkeeping = {}, set()
     for root, _, names in os.walk(refdir):
         for n in names:
             if not n.endswith(".md"):
                 continue
-            p = os.path.relpath(os.path.join(root, n)).replace(os.sep, "/")
+            full = os.path.join(root, n)
+            p = os.path.relpath(full, base).replace(os.sep, "/")
             if n in NOT_A_STANDARD:
                 bookkeeping.add(p)
                 continue
-            files[p] = norm_ws(open(p, encoding="utf-8", errors="replace").read())
+            files[p] = norm_ws(open(full, encoding="utf-8", errors="replace").read())
     return files, bookkeeping
 
 
@@ -89,12 +111,26 @@ def field(block, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("report")
-    ap.add_argument("--reference", default="reference")
+    ap.add_argument("--reference", default=None,
+                    help="corpus to check the report against; defaults to reference/ beside this "
+                         "script. An explicit path is resolved against YOUR working directory.")
     a = ap.parse_args()
 
+    # An explicit --reference is a path the caller typed, so it is resolved the caller's way. The
+    # default is not - it is this folder's own corpus, and it is found where this folder keeps it.
+    refdir = os.path.abspath(a.reference) if a.reference else os.path.join(REPO_ROOT, "reference")
+    if not os.path.isdir(refdir):
+        # Said once, plainly. Without this the corpus simply loads empty and every finding in a
+        # correct report is accused of citing a file that does not exist - the failure mode this
+        # gate is being fixed for, wearing a different hat.
+        print(f"FAIL  no reference corpus at {refdir} \u2014 there is nothing to check the report "
+              f"against. Pass --reference if it lives elsewhere.")
+        return 1
+
+    # The report is the caller's argument, relative or absolute, and is opened as given.
     report = open(a.report, encoding="utf-8").read()
-    ref, bookkeeping = load_reference(a.reference)
-    ledger_path = os.path.join(a.reference, "STANDARDS-LEDGER.md")
+    ref, bookkeeping = load_reference(refdir)
+    ledger_path = os.path.join(refdir, "STANDARDS-LEDGER.md")
     ledger = norm_ws(open(ledger_path, encoding="utf-8").read()) if os.path.exists(ledger_path) else ""
 
     findings = split_findings(report)

@@ -27,6 +27,14 @@ Gate 2 is the one that matters most and is the easiest to get wrong. It reads th
 checker that only re-reads the standard proves the standard has not moved; it would pass a report
 whose findings had drifted away from the text they cite.
 
+It is also the only script here that opens a file nobody named on the command line. The path in a
+finding — `reference/eu-2020-878/regulation-2020-878.md` — is relative to **this folder**, not to
+whoever ran the gate, so the gate resolves it from its own location. Two things follow: the answer
+does not change with your working directory, and a report kept outside the repository is checked
+against the corpus that ships here. `--reference` still redirects the corpus, and being a path you
+typed it is resolved against your working directory. If it names nothing, the gate says so once and
+exits 1 rather than reporting every citation in the report as missing.
+
 ## Run after editing the documentation
 
 | Script | Job |

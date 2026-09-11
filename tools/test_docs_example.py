@@ -42,8 +42,12 @@ def main():
         path = fh.name
     try:
         for gate in ("verify_citations.py", "validate_report.py"):
+            # Deliberately NOT cwd=ROOT. The probe report is written to a temporary directory
+            # outside the repository and the gates are invoked from wherever this script was
+            # started, so this doubles as the regression test for a gate that used to resolve
+            # `reference/...` against the caller's working directory.
             r = subprocess.run([sys.executable, os.path.join(ROOT, "tools", gate), path],
-                               capture_output=True, text=True, cwd=ROOT)
+                               capture_output=True, text=True)
             tail = r.stdout.strip().split("\n")[-1] if r.stdout.strip() else r.stderr.strip()[:200]
             print(f"{'PASS' if r.returncode == 0 else 'FAIL'}  {gate}: {tail}")
             if r.returncode != 0:

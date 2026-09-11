@@ -304,6 +304,10 @@ auditor's own account of how the audit went.
     python3 tools/verify_citations.py  <run>/report.md                # do the citations hold
     python3 tools/validate_report.py   <run>/report.md                # verdict shape and boundaries
 
+Run them from any directory. Gate 2 resolves the `reference/...` path a finding names against the
+Salus folder it ships in, not against yours, so the same report returns the same counts from a
+fresh clone's root and from your home directory.
+
 **Gate 1** extracts the sheet with two independent engines — poppler and pypdf — and asserts that
 nothing the second one found is missing from what the first one shipped: every distinct character,
 every word and number token, every chemical identifier and hazard code. It also proves the shipped
