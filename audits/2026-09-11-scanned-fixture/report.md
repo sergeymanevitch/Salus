@@ -49,6 +49,6 @@ Stated whether or not they bit here. On this run the first one is the whole stor
 
 The twenty-one real sheets in `test-cases/sds/` all carry a text layer, so none of them exercises
 this path. A scanned sheet is one of the commonest things a reviewer is actually handed, and an
-auditor that has never been shown one does not know it is supposed to stop. `test-cases/sds-constructed/README.md`
+auditor that has never been shown one does not know it is supposed to stop. `test-cases/sds-constructed/CONTEXT.md`
 records exactly how this file was built, from which sheet, so nobody mistakes it for a
 manufacturer's document.

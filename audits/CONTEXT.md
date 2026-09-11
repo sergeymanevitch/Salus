@@ -14,7 +14,7 @@ whole reason the rendering ships beside the report rather than being regenerated
 reader six months from now opens the same file the auditor opened, not a new extraction from a
 newer version of a tool.
 
-## The five runs here
+## The seven runs here
 
 | Run | Regime | Verdict | What it is for |
 | --- | --- | --- | --- |
@@ -23,8 +23,11 @@ newer version of a tool.
 | `2026-09-11-carboguard-us` | US | DOES NOT CONFORM | the US path. A smaller audit than the EU ones, because 1910.1200 publishes less that can be cited — and the report says which claims it is not making |
 | `2026-09-11-weicon-truncated` | EU | DOES NOT CONFORM | incomplete is not unreadable. Four of sixteen sections, perfectly legible; the document's own pagination is the evidence |
 | `2026-09-11-scanned-fixture` | — | CANNOT VERIFY | stops at Stage 1 and cites no provision at all, because none was applied |
+| `2026-09-11-jetlube-fmg-nlgi2` | EU | DOES NOT CONFORM | a sheet that is not classified and still fails three times: a forbidden reassurance in 2.1, a revision with no indication of what changed, flammability marked not applicable on a solid. Section 3 names no substance, so Stage 5 ran no lookup at all — and the report says that rather than implying a clean classification |
+| `2026-09-11-nye-ts2024-china` | EU | DOES NOT CONFORM | a sheet compiled to the Chinese GB/T standards and audited against Annex II because that is what the settings file says. Eleven findings, and they are one defect seen eleven times: no Part B subsections, no chemical identity in Section 3, no PBT/vPvB determination, no Union provisions in Section 15. The report says what it is not claiming — GB/T 16483 is not shipped, so it makes no judgement about the sheet in its own regime |
 
-The last two sit either side of the line that is easiest to get wrong under pressure.
+`2026-09-11-weicon-truncated` and `2026-09-11-scanned-fixture` sit either side of the line that is
+easiest to get wrong under pressure.
 
 ## Before a run is added here
 

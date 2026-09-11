@@ -107,7 +107,7 @@ be recorded as such.
 
 > **This fixture is constructed, and the repository says so loudly.** It is pages 1–2 of a real
 > Devcon sheet, rasterised and wrapped back into a PDF; the exact commands are in
-> `test-cases/sds-constructed/README.md`. All twenty-one real sheets carry a text layer, so none of
+> `test-cases/sds-constructed/CONTEXT.md`. All twenty-two real sheets carry a text layer, so none of
 > them reaches this path — and an auditor that has never been shown an unreadable sheet does not
 > know it is supposed to stop.
 

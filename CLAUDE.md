@@ -10,7 +10,7 @@ file is the route for anyone — or anything — about to *do* an audit with the
 2. **`config/jurisdiction.md`** — EU or US, and the house age gate. If it is not filled in, the
    verdict is CANNOT VERIFY and the audit stops there.
 3. **`rules.md`** — the seven stages, in order, with the finding format and the token discipline.
-4. **`reference/`** — only at the provision you are about to cite. `reference/README.md` routes.
+4. **`reference/`** — only at the provision you are about to cite. `reference/CONTEXT.md` routes.
 
 **Do not read `reference/` end to end.** It is roughly 450 KB of regulation. `rules.md` says how to
 open it: one Annex VI row per CAS or Index number, one provision at a time. A whole run should cost
@@ -20,7 +20,8 @@ a few thousand tokens, and it only does if that rule is kept.
 
 - `tools/CONTEXT.md` — which script is a gate, which is maintenance, and the order they run in.
 - `audits/CONTEXT.md` — what a run folder must contain before it may be filed.
-- `examples.md` — three finished runs, one per verdict, if you want to see the shape before working.
+- `examples.md` — five finished runs, covering all three verdicts and both regimes, if you want to
+  see the shape before working.
 
 ## The two things that void a run
 

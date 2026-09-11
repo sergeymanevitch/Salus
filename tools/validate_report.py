@@ -49,13 +49,40 @@ BANNED = [
     (r"рекоменду(?:ю|ем|ется)\s+(?:использовать|заменить|применять)", "advises in Russian"),
 ]
 
-# Places the banned words may legitimately appear: quotations of the sheet or of the standard,
-# and this tool's own statements about what it will not do.
+# Places the banned words may legitimately appear: a blockquote of the sheet, a table cell
+# carrying its wording, and this tool's own statements about what it will not do.
+#
+# NOTE ON WHAT IS *NOT* HERE. This list once carried r"^\s{4,}\S" - exempt any indented line -
+# on the reasoning that indented lines are quotations. They are not. rules.md mandates that
+# indentation for WHAT, WHERE, RULE and WHY, which is the whole body of every finding, so the
+# exemption excused roughly three quarters of a report including the auditor's own prose in WHY.
+# A report reading "This material is safe to use" inside a finding passed this gate. Quotation
+# is marked by quotation marks, not by whitespace, so quoted spans are now blanked out before
+# the scan (see strip_quoted) and indentation exempts nothing.
 EXEMPT_CONTEXT = [
-    r"^\s*>", r"^\s*\|", r"^\s{4,}\S", r"(?i)\bquote\b", r"(?i)^\s*RULE\b",
+    r"^\s*>", r"^\s*\|", r"(?i)\bquote\b",
     r"(?i)salus (?:does not|never|cannot)", r"(?i)this (?:is not|does not constitute)",
     r"(?i)not a (?:release|clearance|approval)",
 ]
+
+
+def strip_quoted(text):
+    """Blank every double-quoted span, keeping line numbers and column offsets intact.
+
+    A finding quotes the sheet and the standard verbatim, and those quotations may legitimately
+    contain the very words this gate bans - a supplier's Section 7 really can say "safe to use".
+    What the auditor writes AROUND the quotation may not. Blanking the quoted span rather than
+    the indented block is the difference between exempting a citation and exempting the report.
+
+    Quotes may run across lines, so the substitution is made over the whole text and newlines are
+    preserved, which keeps the reported line numbers true.
+    """
+    out = list(text)
+    for m in re.finditer(r'"[^"]*"', text, re.S):
+        for i in range(m.start(), m.end()):
+            if out[i] != "\n":
+                out[i] = " "
+    return "".join(out)
 
 
 def main():
@@ -64,6 +91,9 @@ def main():
     a = ap.parse_args()
     text = open(a.report, encoding="utf-8").read()
     lines = text.split("\n")
+    # Scanned for banned language with every quotation blanked out. Structural checks below
+    # still read `text`, because a verdict or a finding tag inside a quotation is still there.
+    scan_lines = strip_quoted(text).split("\n")
 
     problems, notes = [], []
 
@@ -96,11 +126,11 @@ def main():
         if has_std and has_pol:
             problems.append(f"{tag} is marked as both a standard violation and a policy gate")
 
-    for i, line in enumerate(lines, 1):
+    for i, (line, scanned) in enumerate(zip(lines, scan_lines), 1):
         if any(re.search(p, line) for p in EXEMPT_CONTEXT):
             continue
         for pat, why in BANNED:
-            m = re.search(pat, line, re.I)
+            m = re.search(pat, scanned, re.I)
             if m:
                 problems.append(f"line {i}: BOUNDARY BREACH — {why}: \"{m.group()}\" "
                                 f"in: {line.strip()[:110]}")

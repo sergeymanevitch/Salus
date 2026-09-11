@@ -5,7 +5,9 @@ a sheet must be written, and where it does not — naming the exact provision be
 in a file you can open and read for yourself.
 
 It is a folder. Drop it into a Claude project, point any AI tool at it, or run its scripts from a
-terminal. Nothing is installed and nothing phones home.
+terminal. Nothing is installed and nothing phones home. Those three are not the same auditor,
+though: the gates that guard a report are scripts, and a Claude project has no shell to run them
+in. *Where it runs, and what each surface costs you*, below, says exactly what that costs.
 
 **It audits the document. It never tells you anything about the material.** A perfectly compliant
 sheet can describe a substance that will kill someone; a defective sheet can describe table salt.
@@ -61,6 +63,37 @@ writing that no law requires it.
   happens to the sheet next belongs to the specialists it goes to.
 - **No OCR.** A scanned sheet gets CANNOT VERIFY rather than a guess.
 
+## Where it runs, and what each surface costs you
+
+The audit is a reading, and a reading works anywhere. The machinery that *checks* the reading is a
+handful of Python scripts, and those need a shell. Naming what their absence costs is the same
+discipline as the blind spots above: an auditor that says where it is weaker is worth more than one
+that implies it is equally strong everywhere.
+
+| | Terminal, or an agent with a shell | Claude project, or any AI tool without one |
+| --- | --- | --- |
+| The standards in `reference/`, opened at the provision | yes | yes |
+| The seven stages, the finding format, the severity ladder | yes | yes |
+| Line-anchored rendering and its fidelity evidence (`extract.py`) | yes | **no** — you supply the text, and nothing proves what it lost |
+| **Gate 1** — conversion fidelity, two independent engines | yes | **no** |
+| **Gate 2** — every citation checked against the file it names | yes | **no** |
+| **Gate 3** — verdict shape, and the ban on saying anything about the material | yes | **no** — the boundary is prose, and prose is not enforcement |
+
+In a Claude project you get the auditor's judgement without the machinery built to distrust it.
+That is a reduction, not a smaller edition. `tools/CONTEXT.md` argues that catching a breach after
+the fact is the second-best outcome; on this surface there is no after the fact at all.
+
+**What to do about it.** Audit where it is convenient, gate where it is possible. A report written
+in a Claude project is just a text file — bring it to a terminal, run Gates 2 and 3 over it, and it
+is guarded exactly as if it had been written there:
+
+    python3 tools/verify_citations.py <report.md>
+    python3 tools/validate_report.py  <report.md>
+
+Gate 1 is the one that cannot be recovered afterwards, because it is a claim about a conversion
+that already happened somewhere else. Where no shell ran `extract.py`, the report should say so:
+the rendering was not verified, and that is a fact about the audit worth writing down.
+
 ## Quick start
 
 **Requirements.** Python 3, `pdftotext` from poppler, and `pypdf`. All three are required, not
@@ -89,8 +122,8 @@ python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
 
-Five finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
-renderings and fidelity reports they used. `examples.md` walks through all five.
+Six finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
+renderings and fidelity reports they used. `examples.md` walks through five of them in detail.
 
 Optional, when there is a network:
 
@@ -101,7 +134,8 @@ python3 tools/build_reference.py        # re-download the standards and regenera
 
 ## If you are here to judge it
 
-Everything below can be checked without trusting a word of this file.
+Everything below can be checked without trusting a word of this file. Items 2 to 4 run scripts, so
+they need a terminal; if you are reading this inside a Claude project, see *Where it runs* above.
 
 1. **Open any finding and follow its citation.** `examples.md` → a finding → the file named in
    `WHERE IN THE STANDARD` → the provision, as text, in `reference/`. Not a link, not a summary.
@@ -187,8 +221,9 @@ flowchart LR
 
 ## The test corpus
 
-`test-cases/sds/` holds **21 real manufacturer safety data sheets** — Chesterton, Loctite, Jotun,
-Carboline, Castrol, Devcon, Dowsil, CRC, Weicon, Jet-Lube, Atlas Copco, Chevron, BG, RD Coatings —
+`test-cases/sds/` holds **22 real manufacturer safety data sheets** — Chesterton, Loctite, Jotun,
+Carboline, Castrol, Devcon, Dowsil, CRC, Weicon, Jet-Lube, Atlas Copco, Chevron, BG, Nye Lubricants,
+RD Coatings —
 in both EU and US formats, some of them declaring superseded revisions, one of them naming an
 Israeli REACH variant. They are what Salus was built against and what every claim here was tested
 on. They are not decoration: the rows in `reference/eu-clp-annex-vi/` are selected by the
@@ -234,7 +269,7 @@ auditor's own account of how the audit went.
 nothing the second one found is missing from what the first one shipped: every distinct character,
 every word and number token, every chemical identifier and hazard code. It also proves the shipped
 Markdown *is* the extraction, by SHA-256, rather than a cleaned-up version of it. It is not a
-rubber stamp: across the twenty-one real sheets it returns PASS on eleven, REVIEW on nine, and
+rubber stamp: across the twenty-two real sheets it returns PASS on twelve, REVIEW on nine, and
 UNCONFIRMED on one — a sheet encrypted with AES, which the second engine cannot open without the
 `cryptography` package, so its completeness is simply not checked and the report says so. And
 `extract.py` states in its own docstring the thing it cannot prove — two engines missing the same
@@ -255,8 +290,10 @@ on house policy, that blind spots are stated, and that no permission language su
 
 ## Claims written to be falsified
 
-Three claims, each with the command that breaks it. If any of them does not behave as described,
-the tool is wrong and the claim should be disbelieved.
+Five claims, each with the command that breaks it. If any of them does not behave as described,
+the tool is wrong and the claim should be disbelieved. Three of the five are stated in two parts —
+what the gate does now, and what it did before an architecture review broke it. A tool that reports
+only the defects it never had is not being audited.
 
 1. **"Every citation is checkable, and the checker reads the report."**
    Take a copy of a report, change one character inside a quoted RULE string, and run the gate on
@@ -271,10 +308,21 @@ the tool is wrong and the claim should be disbelieved.
    74 checks. Edit the reference file instead of the report and it fails the same way — which is
    the point: the gate compares the two, and does not trust either alone.
 
-2. **"Salus cannot be talked into approving a material."**
+2. **"Salus cannot be talked into approving a material — and the ban does not depend on where the
+   words sit."**
    Append `This material is safe to use.` to a copy of any report and run
    `python3 tools/validate_report.py` on it. Two boundary breaches are reported and the run is
-   voided. The ban list is in that script, in plain sight, in English and Russian.
+   voided. Then run the harder version: put the same sentence *inside* a finding, on an indented
+   `WHY` line, which is where an auditor's own prose actually lives. Three breaches, voided there
+   too. Only text inside quotation marks is exempt — a finding has to be able to quote a sheet
+   whose Section 7 says "safe to use" without being accused of having said it.
+
+   *This is the gate's second implementation.* The first exempted any line indented four or more
+   spaces, reasoning that indented lines are quotations — and `rules.md` mandates exactly that
+   indentation for every `WHAT`, `WHERE`, `RULE` and `WHY`. Roughly three quarters of every report
+   went unscanned, and the appended form above was the one path that still worked. Quotation is
+   marked by quotation marks, not by whitespace, and the exemption now sits where quotation is.
+   The ban list is in that script, in plain sight, in English and Russian.
 
 3. **"The standards in `reference/` are the ones in force, and the tool knows when it last checked."**
    Run `python3 tools/check_freshness.py` with a connection. It reports each standard against
@@ -282,6 +330,25 @@ the tool is wrong and the claim should be disbelieved.
    This is not decoration: the first build of this folder shipped the CLP consolidation of
    2025-02-01, and this script found three later ones before submission. The reference layer was
    rebuilt against 2026-07-01. The story is recorded in the ledger.
+
+4. **"A finding cites the standard, not this repository's own prose."**
+   `reference/` also carries the folder's own routing, its provenance hashes and its calendar.
+   None of those is a provision. Write a finding that quotes `reference/CONTEXT.md` and names it
+   under `WHERE IN THE STANDARD`, and Gate 2 refuses it by name: *cites … as a provision. That file
+   is this folder's own bookkeeping, not the standard.*
+
+   *Until this was fixed it passed with zero failures.* The gate walked every `.md` under
+   `reference/`, so what it actually proved was that a quoted string appeared in some markdown this
+   folder ships — a weaker claim than the one it was making.
+
+5. **"Five parts are required of a finding, and five are enforced."**
+   Delete every `WHERE` line from a copy of a report — the part that locates the defect in the
+   sheet — and Gate 2 fails once per finding.
+
+   *Until this was fixed, it did not.* `^\s*WHERE\b` also matched the heading
+   `WHERE IN THE STANDARD`, because the word boundary sits in the space before *IN*. A finding
+   carrying only the latter satisfied both, and the five required parts were enforced as four. The
+   part that went missing was the one a reader cannot reconstruct from the standard.
 
 ## Rebuilding everything from source
 
@@ -298,7 +365,7 @@ summary.
 - **OSHA Appendix D, Table D.1.** The current eCFR publishes it as a *graphic*, not text, so it
   cannot be quoted and Salus does not cite it. US structural findings rest on § 1910.1200(g)(2),
   (g)(3) and (g)(5), which are regulatory text and are shipped in full. Stated again in
-  `identity.md` and `reference/README.md`.
+  `identity.md` and `reference/CONTEXT.md`.
 - **CLP Annex VI Table 3 in full.** Several thousand rows. What ships is every row whose identifier
   appears in the corpus, matched by CAS or by Index number. The count is stated in the header of
   the file itself, which is generated — this sentence deliberately does not repeat it, because a
@@ -310,10 +377,16 @@ summary.
 
     identity.md     who the auditor is, the three verdicts, the boundaries, the blind spots
     rules.md        how it audits: seven stages, the finding format, severity, token discipline
-    examples.md     three real audits, one of each verdict
+    examples.md     five real audits, covering all three verdicts
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
     tools/          extraction, the three gates, the reference builder, the freshness check
-    test-cases/     21 real manufacturer sheets, and one constructed fixture kept apart
-    audits/         five worked runs, with the renderings and fidelity reports they used
+    test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
+    audits/         six worked runs, with the renderings and fidelity reports they used
+
+`README.md` is the only file of its kind, and it is this one — it addresses the person using or
+judging the folder. Every other folder states its own contract in a `CONTEXT.md`: what it holds,
+what may be written into it, and what a human checks before anything is added. Open the folder and
+the contract is the first thing in it. `CLAUDE.md` routes an agent through the same structure
+without repeating any of it.

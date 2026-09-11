@@ -1,7 +1,7 @@
 # Constructed fixtures
 
 Two files, and neither is a safety data sheet as a supplier issued it. Both exist to exercise a
-path the twenty-one real sheets do not reach. They are kept out of `test-cases/sds/` so nothing in
+path the twenty-two real sheets do not reach. They are kept out of `test-cases/sds/` so nothing in
 the corpus of real documents is contaminated by a file that was altered here.
 
 | File | What it is | Why it exists |

@@ -33,15 +33,28 @@ def norm_ws(s):
     return re.sub(r"\s+", " ", s.replace(" ", " ")).strip()
 
 
+# Files that live under reference/ but are ABOUT the corpus rather than part of it: this
+# folder's own routing, its provenance hashes, its calendar. A finding cites a provision, and
+# none of these is one. Loaded as if they were, the gate's claim collapses from "the quoted
+# provision appears in the standard" to "the quoted string appears in some markdown we ship" -
+# and a finding quoting this repository's own prose passes as a regulatory citation.
+NOT_A_STANDARD = {
+    "CONTEXT.md", "README.md", "PROVENANCE.md", "STANDARDS-LEDGER.md", "FRESHNESS-LOG.md",
+}
+
+
 def load_reference(refdir):
-    files = {}
+    files, bookkeeping = {}, set()
     for root, _, names in os.walk(refdir):
         for n in names:
-            if n.endswith(".md"):
-                p = os.path.join(root, n)
-                files[os.path.relpath(p).replace(os.sep, "/")] = norm_ws(
-                    open(p, encoding="utf-8", errors="replace").read())
-    return files
+            if not n.endswith(".md"):
+                continue
+            p = os.path.relpath(os.path.join(root, n)).replace(os.sep, "/")
+            if n in NOT_A_STANDARD:
+                bookkeeping.add(p)
+                continue
+            files[p] = norm_ws(open(p, encoding="utf-8", errors="replace").read())
+    return files, bookkeeping
 
 
 def split_findings(text):
@@ -58,7 +71,17 @@ def split_findings(text):
 
 
 def field(block, name):
-    m = re.search(rf"(?m)^\s*{re.escape(name)}\b[:\s]*(.*?)(?=^\s*(?:{'|'.join(re.escape(r) for r in REQUIRED)})\b|\Z)",
+    """Pull one named part out of a finding block.
+
+    WHERE and WHERE IN THE STANDARD are different parts and one is a prefix of the other, so
+    `^\s*WHERE\b` matches the heading of BOTH - \b sits happily in the space before "IN". Left
+    unguarded, a finding carrying only WHERE IN THE STANDARD satisfies the requirement for WHERE
+    as well, and the five required parts are enforced as four. The part that goes missing is the
+    one that locates the defect in the sheet, which is the half of a finding a reader cannot
+    reconstruct from the standard.
+    """
+    guard = r"(?! IN THE STANDARD\b)" if name == "WHERE" else ""
+    m = re.search(rf"(?m)^\s*{re.escape(name)}\b{guard}[:\s]*(.*?)(?=^\s*(?:{'|'.join(re.escape(r) for r in REQUIRED)})\b|\Z)",
                   block, re.S)
     return m.group(1) if m else None
 
@@ -70,7 +93,7 @@ def main():
     a = ap.parse_args()
 
     report = open(a.report, encoding="utf-8").read()
-    ref = load_reference(a.reference)
+    ref, bookkeeping = load_reference(a.reference)
     ledger_path = os.path.join(a.reference, "STANDARDS-LEDGER.md")
     ledger = norm_ws(open(ledger_path, encoding="utf-8").read()) if os.path.exists(ledger_path) else ""
 
@@ -119,7 +142,11 @@ def main():
             print(f"FAIL  {tag}  names no file under reference/")
         for path in named:
             checks += 1
-            if path not in ref:
+            if path in bookkeeping:
+                failures += 1
+                print(f"FAIL  {tag}  cites {path} as a provision. That file is this folder's own "
+                      f"bookkeeping, not the standard — a finding must cite regulatory text")
+            elif path not in ref:
                 failures += 1
                 print(f"FAIL  {tag}  cites a file that does not exist: {path}")
 

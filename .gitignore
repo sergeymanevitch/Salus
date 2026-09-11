@@ -6,3 +6,8 @@ tools/.cache/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Renderings and fidelity reports belong to the run that made them, under audits/<run>/.
+# Running extract.py or Gate 1 without --outdir drops them beside the input; never commit those.
+test-cases/**/*.salus.md
+test-cases/**/*.fidelity.json
