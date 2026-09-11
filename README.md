@@ -459,8 +459,9 @@ summary.
 
 - **OSHA Appendix D, Table D.1.** The current eCFR publishes it as a *graphic*, not text, so it
   cannot be quoted and Salus does not cite it. US structural findings rest on § 1910.1200(g)(2),
-  (g)(3) and (g)(5), which are regulatory text and are shipped in full. Stated again in
-  `identity.md` and `reference/CONTEXT.md`.
+  (g)(3) and (g)(5), which are regulatory text and are shipped in full. Only that one table is
+  missing: Appendices A, B, C, E and F ship as text, one provision per line, and are citable.
+  Stated again in `identity.md` and `reference/CONTEXT.md`.
 - **CLP Annex VI Table 3 in full.** Several thousand rows. What ships is every row whose identifier
   appears in the corpus, matched by CAS or by Index number. The count is stated in the header of
   the file itself, which is generated — this sentence deliberately does not repeat it, because a

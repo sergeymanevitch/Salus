@@ -38,7 +38,7 @@ whose findings had drifted away from the text they cite.
 | Script | Job |
 | --- | --- |
 | `check_freshness.py` | ask the publishers what exists now, write `reference/FRESHNESS-LOG.md`. Never edits the ledger — promoting a published revision to *in force* is a legal reading and belongs to a person |
-| `build_reference.py` | re-download the three standards and regenerate everything under `reference/`, with SHA-256 provenance for source and output |
+| `build_reference.py` | re-download the three standards and regenerate everything under `reference/`, with SHA-256 provenance for source and output. `--only osha` (or `eu878`, `clp`) rebuilds one and leaves the others' bytes and hashes untouched, so a fix to one converter does not put an unexplained diff on the other two |
 
 An audit never calls either one. That is why the folder works with no connection, and why it still
 knows how old its own knowledge is.

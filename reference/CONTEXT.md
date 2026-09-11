@@ -11,7 +11,7 @@ If a finding cites a provision, the provision is in this folder. That is the who
 | Folder | What it holds | Size |
 | --- | --- | --- |
 | `eu-2020-878/` | Commission Regulation (EU) 2020/878 in full, including the replacement Annex II with all sixteen sections and their subheadings | ~116 KB |
-| `us-osha-hcs/` | 29 CFR 1910.1200 in full, including Appendices A–F | ~300 KB |
+| `us-osha-hcs/` | 29 CFR 1910.1200 in full, including Appendices A–F | ~308 KB |
 | `eu-clp-annex-vi/` | CLP Annex VI Part 1 Notes in full, and the Table 3 rows for every CAS number that appears in the shipped test sheets | ~26 KB |
 | `STANDARDS-LEDGER.md` | which revision of each standard is in force, with the dates quoted from the standards' own text | — |
 
@@ -47,18 +47,30 @@ only opens one file should still meet it.
 
 **ISO 11014 and other paywalled standards.** They cannot be shipped, so they are not cited.
 
-## One known roughness
+## Opening the US standard at a provision
 
-In `us-osha-hcs/29-cfr-1910-1200.md` the *body* paragraphs are one per line, so § 1910.1200(g)(2),
-(g)(3) and (g)(5) — the only US provisions this auditor cites — can be opened at the provision.
-The **appendices** are not: the publisher's markup runs each appendix together, so two lines in
-that file are enormous, and Appendix C or F cannot be opened at a point. No shipped finding is
-affected, and no finding may rest on an appendix until this is fixed in
-`tools/build_reference.py`.
+Every provision in `us-osha-hcs/29-cfr-1910-1200.md` is its own line — the body paragraphs, and
+since 2026-09-11 the appendices with them. `grep -n "B.6.1"` lands on `### B.6.1 Definition`, and a
+reader opens the file there and sees the text a finding quotes. **A finding may rest on an
+appendix.** The one thing it may not rest on is Table D.1, for the reason given above.
+
+It was not always so, and why is worth keeping. The eCFR writes an indented paragraph as `<P-2>`,
+`<FP-1>`, `<FP-2>`. The converter's tag pattern matched those openings as though they were `<P>`
+and `<FP>`, then went looking for a closing tag that belonged to a different element tens of
+thousands of characters later. Everything in between was swallowed into a single paragraph: two
+lines of 143,677 and 69,528 characters, covering Appendix A from A.2 onward and everything from
+B.3.3 to the end of Appendix E. Those parts had no headings at all — 26 survived where there are
+now 209 — and thirty-one of the thirty-three tables were flattened into running prose. Worse, the
+swallowed text was tag-stripped a second time, which ate any `<60%` or `>0.2%` inside it — in
+running text those look like markup.
+`ecfr_to_md()` now requires the closing tag to match the opening tag exactly, suffix included. The
+file went from 914 lines to 3,536, from 2 rendered tables to 33, and two mangled cells in
+Appendix A came back. Nothing was dropped: the word count rose, it did not fall.
 
 ## Rebuilding
 
-    python3 tools/build_reference.py            # re-download and regenerate
-    python3 tools/build_reference.py --offline  # regenerate from tools/.cache/
+    python3 tools/build_reference.py               # re-download and regenerate
+    python3 tools/build_reference.py --offline     # regenerate from tools/.cache/
+    python3 tools/build_reference.py --only osha   # one standard; the other two are not touched
 
 The generated files are committed. The cache is not.
