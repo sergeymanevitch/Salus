@@ -333,13 +333,24 @@ does not match its own provenance stops the gate with that diagnosis instead of 
 There is no flag to skip it. Run `python3 tools/verify_reference.py` on its own to ask the question
 about the folder rather than about a report — it takes no arguments and claim 7 below breaks it.
 
+It also enforces the **corpus rule**: an EU run may cite Annex II and CLP Annex VI, a US run may cite
+29 CFR 1910.1200 and nothing else, because OSHA publishes no harmonised classification list and none
+is shipped for it. A finding standing on Annex VI in a US report stands on a regulation that does not
+govern the sheet. The regime comes from the report's own header row, not from `config/jurisdiction.md`
+— a filed report keeps the regime it was made under, and `audits/` holds both regimes, checked
+together, against one setting that can say only one thing. A disagreement with the setting is printed
+as a note; a report that names no regime at all fails.
+
 There is a fourth check, smaller and aimed at this repository rather than at a sheet:
 `tools/test_docs_example.py` lifts the worked finding out of `rules.md` and runs the two report
 gates over it, so the file that teaches the citation format cannot drift into teaching one the
 gates reject.
 
 **Gate 3** checks the verdict shape, that every finding declares whether it rests on a provision or
-on house policy, that blind spots are stated, and that no permission language survived.
+on house policy, that the header names a regime and applies that regime's standard, that blind spots
+are stated, and that no permission language survived. On a US run it also requires the report to
+record Section 3 as *not assessed for classification correctness* — the sentence that keeps a US
+report from reading as though the classification had been checked and held.
 
 ## An incident, and the gate it produced
 
@@ -380,8 +391,8 @@ bad run has disqualified itself from asking anyone else not to.
 
 ## Claims written to be falsified
 
-Seven claims, each with the command that breaks it. If any of them does not behave as described,
-the tool is wrong and the claim should be disbelieved. Four of them are stated in two parts —
+Eight claims, each with the command that breaks it. If any of them does not behave as described,
+the tool is wrong and the claim should be disbelieved. Five of them are stated in two parts —
 what the gate does now, and what it did before an architecture review broke it. A tool that reports
 only the defects it never had is not being audited.
 
@@ -480,6 +491,28 @@ only the defects it never had is not being audited.
    in the script's own docstring rather than left to be discovered: only the *output* hash is
    checkable offline, because the publisher's bytes are not shipped, and a `PROVENANCE.md` rewritten
    alongside the edit would pass — that one is caught by the diff, since both files are committed.
+
+8. **"An EU run cites the EU rulebooks and a US run cites OSHA, and nothing enforces that but a
+   script."**
+   Paste the worked Annex VI finding from `rules.md` into a copy of the one US report and run
+   Gate 2 on the copy:
+
+       cp audits/2026-09-11-carboguard-us/report.md /tmp/crossed.md
+       python3 -c "f=open('rules.md').read(); \
+                   b=f[f.index('    [F-03] [STANDARD]'):f.index('Two details in that example')]; \
+                   p='/tmp/crossed.md'; s=open(p).read(); \
+                   open(p,'w').write(s.replace('## What passed','### '+b.strip()+'\n\n## What passed',1))"
+       python3 tools/verify_citations.py /tmp/crossed.md
+
+   It fails by name: *cites `reference/eu-clp-annex-vi/...` in a report declaring jurisdiction US.
+   That file is the EU corpus.* The reverse fails the same way — an OSHA paragraph cited in an EU
+   report. Delete the `Jurisdiction` row from a report instead and both report gates refuse it,
+   because a guard the guarded document can switch off is not a guard.
+
+   *Until this was fixed both gates passed it, with zero failures.* The rule was written in
+   `identity.md`, `rules.md` Stage 5 and `config/CONTEXT.md`, and read by no script. It had already
+   been broken once in this folder — CLP Annex VI cited against a US sheet — and was found by a
+   person reading the report, in an architecture review, not by anything that runs.
 
 ## Rebuilding everything from source
 

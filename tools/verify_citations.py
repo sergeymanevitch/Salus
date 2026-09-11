@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gate 2 — does every citation in a report exist, and does the quoted text match the standard?
 
-    python3 tools/verify_citations.py <report.md> [--reference <dir>]
+    python3 tools/verify_citations.py <report.md> [--reference <dir>] [--config <jurisdiction.md>]
 
 Run it from anywhere. The answer does not depend on your working directory: see REPO_ROOT below.
 
@@ -17,9 +17,17 @@ To see it work, change one character inside a quoted RULE string in a report and
 Checks, per finding:
   1. the five required parts are present
   2. every reference/ path named exists
-  3. every quoted string in RULE occurs verbatim in one of those files
-  4. the revision named matches reference/STANDARDS-LEDGER.md
-  5. a confirmation date is present and matches the ledger
+  3. every reference/ path named belongs to the corpus the report's own regime may cite
+  4. every quoted string in RULE occurs verbatim in one of those files
+  5. the revision named matches reference/STANDARDS-LEDGER.md
+  6. a confirmation date is present and matches the ledger
+
+Check 3 is the corpus rule, and until 2026-09-11 it was a rule nobody enforced. An EU run may
+cite Annex II and CLP Annex VI; a US run may cite 29 CFR 1910.1200 and nothing else. A finding
+that stands on Annex VI in a US report stands on a regulation that does not govern the sheet -
+which is the false finding this whole folder is built to prevent. It was written here once, found
+by hand in an architecture review and fixed by hand. A rule fixed by hand can be broken again by
+hand, and a reader cannot tell "the auditor obeyed the rule" from "the rule happened to hold".
 
 A finding marked [HOUSE POLICY - no provision] is held to a different rule, not a weaker one: it
 must state in BOTH its RULE and its WHERE IN THE STANDARD that no provision exists. A policy gate
@@ -69,6 +77,94 @@ def norm_ws(s):
 NOT_A_STANDARD = {
     "CONTEXT.md", "README.md", "PROVENANCE.md", "STANDARDS-LEDGER.md", "FRESHNESS-LOG.md",
 }
+
+
+# Which corpus a report of each regime is entitled to cite. identity.md, config/CONTEXT.md and
+# rules.md Stage 5 all say the same thing in prose; this dict is the same thing said mechanically.
+CORPUS = {
+    "EU": ("reference/eu-2020-878/", "reference/eu-clp-annex-vi/"),
+    "US": ("reference/us-osha-hcs/",),
+}
+CORPUS_OWNER = {
+    "reference/eu-2020-878/": "EU", "reference/eu-clp-annex-vi/": "EU",
+    "reference/us-osha-hcs/": "US",
+}
+# Why each crossing is wrong, said in the terms of the regime it is wrong in. A gate that only
+# reported "wrong folder" would leave the reader to work out what the violation means.
+WHY_CROSS = {
+    ("US", "reference/eu-clp-annex-vi/"):
+        "29 CFR 1910.1200 carries no harmonised classification list and none is shipped for it, "
+        "so a US run performs no classification check at all and records Section 3 as not "
+        "assessed for classification correctness (rules.md Stage 5). A finding standing on "
+        "Annex VI stands on a regulation that does not govern this sheet.",
+    ("US", "reference/eu-2020-878/"):
+        "Annex II binds a supplier placing a substance on the EU market. It obliges the preparer "
+        "of a US sheet to nothing, and a defect measured against it is not a defect this report "
+        "may report.",
+    ("EU", "reference/us-osha-hcs/"):
+        "A US-format sheet audited under jurisdiction: EU is a finding at rules.md Stage 3 - that "
+        "it does not meet Annex II. The finding is written against Annex II, which is the "
+        "obligation that was not met. 1910.1200 is not an obligation anyone here is owed.",
+}
+
+JURIS_ROW = re.compile(r"(?mi)^\s*\|\s*Jurisdiction\b[^|]*\|\s*([^|]*?)\s*\|")
+
+
+def report_jurisdiction(text):
+    """The regime this report was run under, read out of the report's own header table.
+
+    WHY THE REPORT AND NOT config/jurisdiction.md, WHEN THE TWO DISAGREE.
+
+    The config file is the source of truth for a RUN. rules.md Stage 0 reads it before the sheet
+    is opened, and tools/check_scope.py reads it because it is deciding about a live sheet in a
+    live run. This gate is not doing that. It is deciding about a FILED REPORT, and a report is a
+    self-contained record: it names, in its header, on a line a reader reads, the regime it was
+    audited under. That declaration is the evidence of what the run was, and it does not change
+    when the setting changes afterwards.
+
+    Trusting the config here would break the folder on a fresh clone. audits/ holds reports of
+    both regimes - seven EU and one US - and they are checked together, by one command, against
+    one config file that can only say one thing. A judge who clones this repository with
+    `jurisdiction: EU` set and runs the gates over audits/ would watch the US report fail for
+    citing OSHA, and setting the config to US would light up the other seven instead. Every filed
+    report of the other regime failing on every fresh clone is a worse defect than the one this
+    check closes, and it would train a reader to ignore the gate.
+
+    The config is still read, and a disagreement is still reported - as a NOTE, naming both files.
+    During a live run that note is the auditor being told the header and the setting have parted
+    company. Afterwards it is the harmless fact that the installation has been reconfigured since.
+
+    A report that declares NOTHING is a failure, not a fallback to the config. Silence here is not
+    an absence of information, it is the removal of the one thing that makes the corpus rule
+    enforceable: if a missing row meant "check it against the config", or "do not check it", then
+    deleting one line from a header would be enough to cite any regulation in the folder against
+    any sheet. A guard that can be switched off by the document it guards is not a guard.
+    """
+    rows = [re.sub(r"[*`_\s]", "", v).upper() for v in JURIS_ROW.findall(text)]
+    if not rows:
+        return None, ("this report declares no jurisdiction. Its header table must carry the row "
+                      "`| Jurisdiction (from `config/jurisdiction.md`) | EU |`, or the same with "
+                      "US - see audits/CONTEXT.md. Without it this gate cannot tell which corpus "
+                      "the report was entitled to cite, and the rule that a US run may not cite "
+                      "CLP Annex VI stops being enforceable")
+    if len(set(rows)) > 1:
+        return None, ("this report declares more than one jurisdiction: "
+                      + ", ".join(sorted(set(rows)))
+                      + ". A run is made under one regime, named once in the header")
+    if rows[0] not in CORPUS:
+        return None, (f"this report declares jurisdiction `{rows[0]}`, which is not a regime "
+                      f"Salus ships. The two are EU and US, and there is no third value")
+    return rows[0], None
+
+
+def config_jurisdiction(path):
+    """What the installation is set to now. Read for the cross-check only, never as authority
+    over a filed report - see report_jurisdiction()."""
+    if not os.path.exists(path):
+        return None
+    text = open(path, encoding="utf-8", errors="replace").read()
+    m = re.search(r"(?m)^\s*jurisdiction:\s*([A-Za-z]+)", text)
+    return m.group(1).upper() if m else None
 
 
 def load_reference(refdir):
@@ -125,6 +221,9 @@ def main():
     ap.add_argument("--reference", default=None,
                     help="corpus to check the report against; defaults to reference/ beside this "
                          "script. An explicit path is resolved against YOUR working directory.")
+    ap.add_argument("--config", default=None,
+                    help="read only to cross-check the report's own declaration; defaults to "
+                         "config/jurisdiction.md beside this script")
     a = ap.parse_args()
 
     # An explicit --reference is a path the caller typed, so it is resolved the caller's way. The
@@ -158,6 +257,23 @@ def main():
 
     # The report is the caller's argument, relative or absolute, and is opened as given.
     report = open(a.report, encoding="utf-8").read()
+
+    regime, problem = report_jurisdiction(report)
+    if problem:
+        print(f"FAIL  {problem}.")
+        print("\nThe report does not say which rulebook it was entitled to open, so this gate "
+              "cannot check that\nit stayed inside it.")
+        return 1
+    allowed = CORPUS[regime]
+    configpath = os.path.abspath(a.config) if a.config else os.path.join(REPO_ROOT, "config", "jurisdiction.md")
+    configured = config_jurisdiction(configpath)
+    if configured and configured != regime:
+        print(f"NOTE  this report declares {regime}; {configpath} currently reads {configured}. The "
+              f"report is checked\n      against {regime}, the regime it names, because a filed "
+              f"report keeps the regime it was made under\n      and a setting can be changed "
+              f"afterwards. If this report is being written right now, the header\n      and the "
+              f"setting disagree and one of the two is wrong.\n")
+
     ref, bookkeeping = load_reference(refdir)
     ledger_path = os.path.join(refdir, "STANDARDS-LEDGER.md")
     ledger = norm_ws(open(ledger_path, encoding="utf-8").read()) if os.path.exists(ledger_path) else ""
@@ -175,13 +291,14 @@ def main():
                 print("FAIL  a CANNOT VERIFY report cites a provision. The audit stopped before "
                       "any provision was applied; nothing in reference/ should be cited.")
                 return 1
-            print("CANNOT VERIFY report: no findings and no provisions cited, which is correct. "
-                  "Nothing to check here — gate 3 checks the rest.")
+            print(f"CANNOT VERIFY report, declared jurisdiction {regime}: no findings and no "
+                  f"provisions cited, which is correct. Nothing to check here — gate 3 checks "
+                  f"the rest.")
             return 0
         print("FAIL  no findings found in the report — expected blocks headed [F-01], [P-01], ...")
         return 1
 
-    checks = failures = 0
+    checks = failures = crossings = 0
     for block in findings:
         tag = re.search(r"\[(?:F|P)-\d+\]", block).group()
         house = "[HOUSE POLICY" in block
@@ -214,6 +331,17 @@ def main():
             elif path not in ref:
                 failures += 1
                 print(f"FAIL  {tag}  cites a file that does not exist: {path}")
+            elif not path.startswith(allowed):
+                failures += 1
+                crossings += 1
+                root = next((r for r in CORPUS_OWNER if path.startswith(r)), None)
+                owner = CORPUS_OWNER.get(root, "another regime")
+                why = WHY_CROSS.get((regime, root), "")
+                print(f"FAIL  {tag}  cites {path} in a report declaring jurisdiction {regime}. "
+                      f"That file is the {owner} corpus. Under jurisdiction {regime} a run may "
+                      f"cite {' and '.join(allowed)} and nothing else.")
+                if why:
+                    print(f"      {why}")
 
         rule = field(block, "RULE") or ""
         quotes = [q for q in re.findall(r'"([^"]{12,})"', rule)]
@@ -259,10 +387,16 @@ def main():
 
     print(f"\n{len(findings)} finding(s), {checks} check(s), {failures} failure(s)")
     if failures:
+        if crossings:
+            print(f"{crossings} citation(s) reach outside the {regime} corpus. A finding under a "
+                  f"regulation that does not\ngovern the sheet is not a finding, however accurately "
+                  f"it quotes. Withdraw it, or change the\nregime this run was made under and audit "
+                  f"the sheet again from Stage 0.")
         print("The report does not agree with the standard it cites. The standard wins.")
         return 1
-    print("Every citation exists, every quoted provision is present verbatim in the file named, "
-          "and every revision and confirmation date matches the ledger.")
+    print(f"Every citation exists and lies inside the {regime} corpus "
+          f"({', '.join(allowed)}), every quoted provision is present verbatim in the file named, "
+          f"and every revision and confirmation date matches the ledger.")
     return 0
 
 

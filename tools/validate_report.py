@@ -5,8 +5,8 @@
 
 Gate 2 checks that the report agrees with the standard. This one checks that the report is an
 AUDIT at all: one of exactly three verdicts, findings that carry a provision or admit they carry
-none, blind spots declared — and, above everything else, not one word of advice about the
-material.
+none, the regime named in the header, blind spots declared — and, above everything else, not one
+word of advice about the material.
 
 That last check is the one the whole design turns on. A user can ask Salus to approve a material.
 A model under pressure can drift into answering. This gate runs afterwards, over the text, and
@@ -20,6 +20,51 @@ a worker.
 import argparse, re, sys
 
 VERDICTS = ["CONFORMS", "DOES NOT CONFORM", "CANNOT VERIFY"]
+
+REGIMES = ("EU", "US")
+
+# The header row every report carries, and the row this gate reads the regime out of. It is the
+# same row tools/verify_citations.py reads, and it is read from the REPORT rather than from
+# config/jurisdiction.md for the reason set out at length in that file's report_jurisdiction():
+# a filed report keeps the regime it was made under, and audits/ holds reports of both regimes
+# that are checked together against a config file that can only say one thing.
+JURIS_ROW = re.compile(r"(?mi)^\s*\|\s*Jurisdiction\b[^|]*\|\s*([^|]*?)\s*\|")
+STANDARD_ROW = re.compile(r"(?mi)^\s*\|\s*Standard applied\b[^|]*\|\s*([^|]*?)\s*\|")
+
+# What the "Standard applied" row may not name, per regime. The citation-level version of this
+# rule lives in Gate 2, which reads the provisions a finding stands on. This is the header-level
+# version: a report may declare one regime at the top of its table and claim the other regime's
+# rulebook one line below, and no finding has to be wrong for that to be a lie about the run.
+FOREIGN_STANDARD = {
+    "US": [(r"2020/\s?878", "Commission Regulation (EU) 2020/878"),
+           (r"1907/\s?2006", "Regulation (EC) No 1907/2006 (REACH)"),
+           (r"(?i)\bCLP\b|Annex\s*VI", "CLP Annex VI")],
+    "EU": [(r"1910\.1200", "29 CFR 1910.1200"),
+           (r"(?i)Hazard Communication", "the OSHA Hazard Communication Standard")],
+}
+
+# rules.md Stage 5 and identity.md, in the auditor's own words: under jurisdiction: US there is no
+# harmonised classification list to check Section 3 against, so none is checked and the report has
+# to say so. Stated in two files and enforced in none, until this line.
+US_CLASSIFICATION_PHRASE = re.compile(r"(?i)not\s+assessed\s+for\s+classification\s+correctness")
+
+
+def report_jurisdiction(text):
+    """The regime named in the report's header table, or None and the reason it could not be read."""
+    rows = [re.sub(r"[*`_\s]", "", v).upper() for v in JURIS_ROW.findall(text)]
+    if not rows:
+        return None, ("the header table declares no jurisdiction — audits/CONTEXT.md requires the "
+                      "row `| Jurisdiction (from `config/jurisdiction.md`) | EU |`, or US. A "
+                      "report that does not say which regime it was made under cannot be read "
+                      "against the right rulebook by anyone, and cannot be checked against it "
+                      "by Gate 2")
+    if len(set(rows)) > 1:
+        return None, ("the header declares more than one jurisdiction: "
+                      + ", ".join(sorted(set(rows))) + " — a run is made under one regime")
+    if rows[0] not in REGIMES:
+        return None, (f"the header declares jurisdiction `{rows[0]}`, which is not a regime Salus "
+                      f"ships. The two are EU and US")
+    return rows[0], None
 
 BANNED = [
     # permission and prohibition about the material itself
@@ -128,6 +173,33 @@ def main():
     if not re.search(r"(?i)^#+\s*declared blind spots", text, re.M):
         problems.append("no 'Declared blind spots' section — identity.md requires one in every report")
 
+    # Jurisdiction. Which regime a report was run under is part of its shape, not a detail of its
+    # prose: it decides which rulebook the findings may stand on, and Gate 2 cannot enforce that
+    # rule on a report that does not name a regime.
+    regime, juris_problem = report_jurisdiction(text)
+    if juris_problem:
+        problems.append(juris_problem)
+    else:
+        applied = STANDARD_ROW.search(text)
+        for pat, name in FOREIGN_STANDARD[regime]:
+            if applied and re.search(pat, applied.group(1)):
+                problems.append(
+                    f"the header declares jurisdiction {regime} but the 'Standard applied' row "
+                    f"names {name}, which is the other regime's rulebook: "
+                    f"\"{applied.group(1).strip()[:90]}\". A run applies one standard, the one "
+                    f"config/jurisdiction.md selected, and the report says which")
+                break
+        # A US run checks no classification at all and must record that it did not. The sentence
+        # is not decoration: Section 3 is where sheets fail most often on an EU run, and a US
+        # report that says nothing about it reads as though Section 3 had been checked and held.
+        if regime == "US" and performed_checks and not US_CLASSIFICATION_PHRASE.search(text):
+            problems.append(
+                "this is a US run that performed checks, and it nowhere records Section 3 as "
+                "'not assessed for classification correctness' — 29 CFR 1910.1200 publishes no "
+                "harmonised classification list and none is shipped for it, so no classification "
+                "was checked (rules.md Stage 5, identity.md blind spots). A report that omits "
+                "that reads as though Section 3 had been checked and held")
+
     # Only a mark at the head of a line opens a finding. A tag mentioned inside a WHY
     # paragraph is a cross-reference, not a new finding.
     marks = [m.start(1) for m in re.finditer(
@@ -164,8 +236,9 @@ def main():
             print(f"FAIL  {p}")
         print(f"\n{len(problems)} problem(s). This report is void and must not be delivered.")
         return 1
-    print("Verdict shape is valid, every finding declares its class, blind spots are stated, "
-          "and no permission language was found. The report may be delivered.")
+    print(f"Verdict shape is valid, the run declares jurisdiction {regime} and applies that "
+          f"regime's standard, every finding declares its class, blind spots are stated, and no "
+          f"permission language was found. The report may be delivered.")
     return 0
 
 

@@ -9,6 +9,14 @@ together, always: a finding nobody can check against the document it describes i
 | `<sheet>.salus.md` | the rendering the auditor actually read — the extraction, with a line number on every line |
 | `<sheet>.fidelity.json` | the evidence that rendering lost nothing, and the limits of that evidence |
 
+`report.md` opens with a header table, and one row of it is load-bearing rather than descriptive:
+
+    | Jurisdiction (from `config/jurisdiction.md`) | EU |
+
+That row is where Gates 2 and 3 read the regime from, and it decides which corpus the findings are
+allowed to cite. A report without it fails both gates. `tools/CONTEXT.md` § *Which jurisdiction a
+report gate believes* says why the row and not the config file is what a report gate trusts.
+
 The line numbers in the rendering are what every `WHERE` line in the report points at. That is the
 whole reason the rendering ships beside the report rather than being regenerated on demand: a
 reader six months from now opens the same file the auditor opened, not a new extraction from a

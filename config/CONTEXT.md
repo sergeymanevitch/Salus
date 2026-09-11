@@ -19,9 +19,23 @@ One file, read at `rules.md` Stage 0, before the sheet is opened.
 - **The age gate is house policy.** `policy_max_age_years` rests on no provision in either standard,
   and every finding it produces is marked `[HOUSE POLICY — no provision]`.
 
+## What reads this file, and what does not
+
+| Script | Reads it | For what |
+| --- | --- | --- |
+| `tools/check_scope.py` | yes, as the authority | it decides about a live sheet, and `rules.md` Stage 0 says the configured regime is the answer |
+| `tools/verify_citations.py` | yes, as a cross-check only | it decides about a *filed report*, and takes the regime from that report's own header row. A disagreement with this file is printed as a NOTE, not a failure |
+| `tools/validate_report.py` | no | same reason: the report's header row is what it reads |
+| `tools/extract.py` | no | conversion is regime-blind |
+
+The corpus rule above — EU runs cite the EU corpus, US runs cite `reference/us-osha-hcs/` only — is
+now mechanical: Gate 2 fails any finding that reaches outside the regime its report declares. Until
+2026-09-11 it was stated in three files and enforced in none, and it had already been broken once
+here and repaired by hand.
+
 ## Known limit
 
-This file is honoured because `rules.md` says to honour it. **No script reads it.** Not the gates,
-not the extractor. A run that ignores `policy_max_age_years`, or that cites the EU corpus while
-configured for US, is caught by a reader rather than by a gate — which is the second-best outcome,
-and is recorded here rather than left to be discovered.
+**`policy_max_age_years` is still read by no script.** A run that ignores it is caught by a reader
+rather than by a gate — which is the second-best outcome, and is recorded here rather than left to
+be discovered. The gates check that an age finding which *is* made is marked `[HOUSE POLICY — no
+provision]`; nothing checks that one which should have been made was.
