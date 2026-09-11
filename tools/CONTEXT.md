@@ -10,8 +10,8 @@ one holds the documentation to the format it teaches, and two keep the standards
 | Order | Script | Job | Fails the run when |
 | --- | --- | --- | --- |
 | 0 | `verify_reference.py` | **Gate 0** · rehash every generated file under `reference/` against the SHA-256 recorded in its `PROVENANCE.md` | a shipped standard has changed, is missing, or an unrecorded file has appeared in a generated folder. Gate 2 runs this itself before checking a single citation, so it needs no place in the audit's own sequence — run it alone to ask about the corpus rather than about a report |
-| 1 | `extract.py` | turn the PDF into the line-anchored rendering the auditor reads, and write the evidence that nothing was lost | never — it reports, it does not gate |
-| 2 | `verify_conversion.py` | **Gate 1** · re-derive that evidence from the PDF and the rendering on disk, rather than trusting the JSON | a chemical identifier is missing, or the rendering is no longer the extraction |
+| 1 | `extract.py` | turn the PDF into the line-anchored rendering the auditor reads, and write the evidence that nothing was lost | never on what it found — it reports, it does not gate, and it exits 0 on PASS, REVIEW, UNCONFIRMED and NO TEXT LAYER alike. It exits non-zero only when it could not produce the two files at all: no such file, or the primary engine itself failed |
+| 2 | `verify_conversion.py` | **Gate 1** · re-derive that evidence from the PDF and the rendering on disk, rather than trusting the JSON — by calling `extract.compare()`, so there is one comparison and not two that can drift apart | the PDF has no extractable text layer at all (`NO TEXT LAYER`); a chemical identifier is missing, or the rendering is no longer the extraction (`FAIL`); the independent engine could not run, so completeness was never checked (`UNCONFIRMED`). A distinct character or token the independent engine found and the rendering lacks is `REVIEW`: through without `--strict`, stopped with it |
 | 3 | `check_scope.py` | **the scope gate** · does this folder hold the standard the sheet was compiled to? Reads the sheet's own declaration | the sheet declares a third regime — GB/T, JIS, GOST, SOR/2015-17 — and not the configured one. Exit 2: the verdict is CANNOT VERIFY, out of scope, and **no further stage runs** |
 | 4 | *the audit itself* | `rules.md` Stages 2–6 — a person or a model, not a script | — |
 | 5 | `verify_citations.py` | **Gate 2** · read the finished report and check every quoted provision against the file it names, **and that the provision belongs to the corpus the report's own regime may cite** | the report and the standard disagree; a citation reaches outside the regime's corpus — CLP Annex VI or Annex II in a US report, 1910.1200 in an EU one; the report names no regime at all |
@@ -71,7 +71,7 @@ if a missing row meant that, deleting one line from a header would be enough to 
 
 | Script | Job |
 | --- | --- |
-| `check_freshness.py` | ask the publishers what exists now, write `reference/FRESHNESS-LOG.md`. Never edits the ledger — promoting a published revision to *in force* is a legal reading and belongs to a person |
+| `check_freshness.py` | ask the publishers what exists now, write `reference/FRESHNESS-LOG.md`. Never edits the ledger — promoting a published revision to *in force* is a legal reading and belongs to a person. Exits 1 when any target could not be reached, and writes UNREACHABLE rather than a result: a probe that got no answer is not a confirmation that nothing has changed, and that line is one `rules.md` Stage 3 has a report cite |
 | `build_reference.py` | re-download the standards and regenerate everything under `reference/`, with SHA-256 provenance for source and output. It writes the hashes; `verify_reference.py` is what reads them, and offline it can only read the output half — the publisher's bytes are not shipped. `--only osha` (or `eu878`, `clp`) rebuilds one standard and leaves the others' bytes and hashes untouched, so a fix to one converter does not put an unexplained diff on the other two |
 
 An audit never calls either one. That is why the folder works with no connection, and why it still
@@ -80,6 +80,12 @@ knows how old its own knowledge is.
 ## Conventions
 
 - Every script exits non-zero when it fails, so they chain in a shell without reading the prose.
+  **What counts as failure depends on whether the script is a gate.** A gate fails on what it found
+  in the sheet or the report — that is what it is for. A reporter fails only when it could not
+  produce its output at all, and `extract.py` is the only reporter in the sequence. Reading a
+  verdict off a reporter's exit code is how a shell chain built on this table came to die at step 1
+  on the nine corpus sheets that return REVIEW, while Gate 1 let the same nine through: two scripts
+  each deciding, and disagreeing. One decides now.
 - Every script carries its method **and its limits** in its own docstring. `extract.py` states the
   thing its fidelity check cannot prove; read it before quoting the check at anyone.
 - `.cache/` holds the downloaded publisher markup. It is gitignored: large, reproducible, and not

@@ -24,11 +24,29 @@ rulebook for. Either one can end the run before a single provision is opened.
 
 ### 1a — Legibility
 
-Extract the sheet. `tools/extract.py` produces `<name>.salus.md`, a line-anchored rendering, plus
-a fidelity report.
+Extract the sheet, then gate it. Two commands, and the second is the one with teeth:
 
-- No text layer, zero characters, or the fidelity check fails → **CANNOT VERIFY**, reason quoted
-  from the fidelity report. Stop.
+    python3 tools/extract.py <sheet.pdf> --outdir <run>   # rendering + fidelity report; exits 0 always
+    python3 tools/verify_conversion.py <sheet.pdf> --outdir <run>   # Gate 1; exit 1 means stop
+
+`tools/extract.py` produces `<name>.salus.md`, a line-anchored rendering, plus a fidelity report.
+It reports and does not gate — whatever it found, it exits 0, because writing those two files is
+its whole job. Gate 1 re-derives the same comparison from the PDF and from the rendering on disk
+and turns it into an exit code. Read the verdict; do not read the exit code of the wrong script.
+
+- **No text layer, or zero characters** → **CANNOT VERIFY**, reason quoted from the fidelity
+  report. **Stop.** Gate 1 prints `NO TEXT LAYER` and exits 1 on such a sheet, under `--strict` or
+  without it. It used to print PASS, because two empty extractions compare equal and the gate said
+  so out loud; a gate whose assertion is vacuously true is not a gate.
+- **The fidelity check fails** — Gate 1 prints `FAIL`, exit 1 — → **CANNOT VERIFY**. **Stop.** A
+  lost chemical identifier and a rendering that is no longer the extraction both land here.
+- **The fidelity check could not be made** — Gate 1 prints `UNCONFIRMED`, exit 1 — → **CANNOT
+  VERIFY** until a person resolves it. Nothing was found wrong with the sheet; nothing was
+  established about it either, and the two are not the same claim.
+- **`REVIEW`** — a distinct character or token the independent engine found is not in the
+  rendering — → a person reads `lost_characters` and `lost_tokens` before the audit continues.
+  Exit 0 without `--strict`, exit 1 with it. A lost `µ` is a factor of a million on an exposure
+  limit, so this is a stop for a person, not for the shell.
 - Text extracted but no section headings found at all → **CANNOT VERIFY**. Stop.
 - Partial: some sections legible, others empty → continue, and record each unreadable section as
   `not assessed — unreadable`, never as a failure.
@@ -86,6 +104,14 @@ Look for the sheet's own declaration. Suppliers state it in the header — *"Con
 inside Section 15, or not at all.
 
 Then open `reference/STANDARDS-LEDGER.md` and compare against the dates, not against your memory.
+
+The report's header row *Standards knowledge last confirmed online* comes from
+`reference/FRESHNESS-LOG.md`, which `tools/check_freshness.py` writes. Read that log before quoting
+its date: a target recorded as **UNREACHABLE — could not establish** was not confirmed on that run,
+whatever the *Last run* line says, and a run with any unreachable target marks itself **INCOMPLETE**
+and exits 1. Cite the date of the last run that actually got answers for the standard you are
+citing. A date is a claim about what was checked, and an audit that has never reached the
+publishers is entitled to say when it last did — not to imply it just did.
 
 - **Declared revision superseded and its transition window closed** → finding, citing the article
   that closed it. For the EU that is 2020/878 Article 2, window closed 2022-12-31.
