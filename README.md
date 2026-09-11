@@ -169,39 +169,50 @@ they need a terminal; if you are reading this inside a Claude project, see *Wher
 
 ## How it works
 
-One sheet in, one verdict out. Two things can end a run before it starts: an unreadable sheet, and
-a sheet written to a standard that is not here. Nothing reaches a reader until three gates pass.
+One sheet in, one verdict out, and **five checks in between**. Two of them can end the run before
+the audit starts — an unreadable sheet, and a sheet written to a standard that is not here — and
+three stand between the finished report and its reader. Each is a separate script with its own exit
+code, so none of them depends on the auditor's account of how the audit went. They are numbered on
+the diagram in the order a run meets them.
 
 ```mermaid
 flowchart TD
-    SDS["SDS PDF"] --> S0["Stage 0 · settings"]
+    SDS["SDS PDF"] --> S0["Stage 0 · settings<br/>reads config/jurisdiction.md"]
     S0 -->|not configured| CV["CANNOT VERIFY"]
-    S0 -->|EU or US| S1["Stage 1 · convert"]
-    S1 --> G1{"Gate 1 · fidelity"}
+    S0 -->|EU or US| EX["Stage 1a · extract.py<br/>rendering + fidelity evidence<br/>reports, never gates"]
+
+    EX --> G1{"CHECK 1 — Gate 1<br/>verify_conversion.py<br/>is the rendering the whole sheet?"}
     G1 -->|no text layer| CV
-    G1 -->|identifier lost| VOID["VOID · not delivered"]
-    G1 -->|ok| SC{"Stage 1b · scope gate"}
-    SC -->|"declares GB/T, JIS, GOST…"| CV
-    SC -->|EU or US, or nothing declared| S2["Stage 2 · age gate"]
-    S2 --> S3["Stage 3 · revision"]
-    S3 --> S4["Stage 4 · structure"]
-    S4 --> S5["Stage 5 · classification"]
-    S5 --> S6["Stage 6 · consistency"]
-    S6 --> REP["report.md"]
-    REP --> G2{"Gate 2 · citations"}
-    G2 -->|quote not found| VOID
-    G2 --> G3{"Gate 3 · boundaries"}
-    G3 -->|permission language| VOID
-    G3 -->|no findings| OK["CONFORMS"]
-    G3 -->|findings| NO["DOES NOT CONFORM"]
+    G1 -->|a character or identifier was lost| VOID["VOID · not delivered"]
+    G1 -->|passes| SC{"CHECK 2 — the scope gate<br/>check_scope.py<br/>do we hold the rulebook this sheet declares?"}
+
+    SC -->|declares a third regime and neither of ours| CV
+    SC -->|ours, or nothing declared| AUD["Stages 2–6 · the audit itself<br/>a person or a model, against rules.md"]
+    AUD --> REP["report.md<br/>verdict · findings · passes · blind spots"]
+
+    REP --> G0{"CHECK 3 — Gate 0<br/>verify_reference.py<br/>is the standard still the one we downloaded?"}
+    G0 -->|a hash does not match| VOID
+    G0 -->|passes| G2{"CHECK 4 — Gate 2<br/>verify_citations.py<br/>does the report agree with the standard it cites?"}
+    G2 -->|quote absent · wrong corpus · part missing| VOID
+    G2 -->|passes| G3{"CHECK 5 — Gate 3<br/>validate_report.py<br/>is it a report, and does it stay off the material?"}
+    G3 -->|permission language · verdict contradicts findings| VOID
+    G3 -->|passes| OUT["delivered<br/>CONFORMS · DOES NOT CONFORM · CANNOT VERIFY"]
 
     classDef v fill:#0b3d2e,stroke:#7fd1ae,color:#eafff5
     classDef b fill:#4a1420,stroke:#ff9db0,color:#ffe9ee
     classDef g fill:#12314f,stroke:#7fb6f0,color:#eaf4ff
-    class OK,NO,CV v
+    class OUT,CV v
     class VOID b
-    class G1,G2,G3 g
+    class G0,G1,G2,G3,SC g
 ```
+
+Checks 1 and 2 guard the run: they decide whether there is anything to audit and whether this folder
+holds the rulebook for it. Checks 3, 4 and 5 guard the report, and they run in that order for a
+reason — Gate 2 calls Gate 0 before it reads a single citation, because *the quoted provision appears
+in the standard* is worth exactly what the standard being unmodified is worth. A sixth script,
+`test_docs_example.py`, checks this repository rather than a sheet: it puts the worked example out of
+`rules.md` through Gates 2 and 3, so the file that teaches the citation format cannot drift into
+teaching one the gates reject.
 
 **What each stage does, and what it reads.** No stage reads a reference file through; each opens it
 at the provision it is about to cite. That is what keeps a run at a few thousand tokens.
@@ -209,7 +220,8 @@ at the provision it is about to cite. That is what keeps a run at a few thousand
 | Stage | Question it answers | Reads |
 | --- | --- | --- |
 | 0 · settings | EU or US? | `config/jurisdiction.md` |
-| 1 · convert | can this sheet be read at all? | the PDF, twice, with two engines |
+| 1a · convert | can this sheet be read at all? | the PDF, twice, with two engines |
+| 1b · scope | is it written to a standard this folder holds? | the sheet's own declaration, and `config/jurisdiction.md` |
 | 2 · age gate | older than the house limit? | the sheet's issue date — **no provision, house policy** |
 | 3 · revision | which revision applies today? | `STANDARDS-LEDGER.md`, `FRESHNESS-LOG.md` |
 | 4 · structure | all 16 sections, numbered, populated? | 2020/878 Annex II, or 1910.1200 (g) |
@@ -305,14 +317,16 @@ Across all twenty-four shipped sheets it stops exactly one.
 counted as a declaration of the EU standard, and appending that precautionary line to the Chinese
 sheet turned the stop into an audit — reopening the incident below.
 
-## The three gates
+## The gates, one at a time
 
-No report is produced until all three pass. They are scripts, so they do not depend on the
-auditor's own account of how the audit went.
+Checks 1 to 5 from the diagram above, in the order a run meets them. No report is produced until
+every one of them passes.
 
-    python3 tools/verify_conversion.py "<sheet>.pdf" --outdir <run>   # is the rendering faithful
-    python3 tools/verify_citations.py  <run>/report.md                # do the citations hold
-    python3 tools/validate_report.py   <run>/report.md                # verdict shape and boundaries
+    python3 tools/verify_conversion.py "<sheet>.pdf" --outdir <run>   # 1 · is the rendering faithful
+    python3 tools/check_scope.py       <run>/<sheet>.salus.md         # 2 · is there a rulebook for it
+    python3 tools/verify_reference.py                                 # 3 · is the corpus unmodified
+    python3 tools/verify_citations.py  <run>/report.md                # 4 · do the citations hold
+    python3 tools/validate_report.py   <run>/report.md                # 5 · verdict shape and boundaries
 
 Run them from any directory. Gate 2 resolves the `reference/...` path a finding names against the
 Salus folder it ships in rather than against yours, so the same report returns the same counts
@@ -381,7 +395,8 @@ for the Chinese market. Its first line reads *"Prepared in accordance with GB/T 
 nor US 29 CFR 1910.1200. The run was made under `jurisdiction: EU`, so it was compared with Annex II
 from beginning to end, and it was filed as **DOES NOT CONFORM with eleven findings**.
 
-Every one of those findings was accurate as a reading of the text. All three gates passed on it. It
+Every one of those findings was accurate as a reading of the text. All three gates that existed
+that morning passed on it. It
 was still wrong: the eleven findings are not eleven defects. They are **one observation, that the
 wrong ruler was used, restated once per provision**. A reader cannot tell that list apart from a list of real defects, and the document is
 not defective. It is a competent sheet written to a standard this folder does not hold.
@@ -579,8 +594,7 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the scope gate, the three gates, the corpus check, the docs gate,
-                    builder, freshness
+    tools/          extraction, the five checks a run must pass, the docs gate, builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
     audits/         eight worked runs, with the renderings and fidelity reports they used
 

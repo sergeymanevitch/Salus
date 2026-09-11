@@ -40,7 +40,7 @@ easiest to get wrong under pressure.
 
 ## Before a run is added here
 
-All three gates must pass on it — `tools/CONTEXT.md` names them and their order. A report that has
+Every check must pass on it — `tools/CONTEXT.md` names them and their order, and `README.md` § *How it works* numbers them one to five. A report that has
 not passed them has not been produced, and must not be filed here as though it had.
 
 The scope gate comes before all of them, and it is not a report gate: run
