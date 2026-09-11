@@ -15,6 +15,27 @@ Salus judges the paperwork and stops there.
 
 ---
 
+## The folder
+
+    identity.md     who the auditor is, the three verdicts, the boundaries, the blind spots
+    rules.md        how it audits: seven stages, the finding format, severity, how to read
+    examples.md     five real audits, covering all three verdicts
+    reference/      the standards themselves, plus the ledger and the freshness log
+    README.md       this file
+    config/         jurisdiction and house policy — fill this in before the first run
+    tools/          extraction, the age arithmetic, the five checks a run must pass, two docs
+                    gates, the settings reader, builder, freshness
+    test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
+    audits/         eight worked runs, with the renderings and fidelity reports they used
+
+`README.md`, this file, is the only one here addressed to a person: whoever is using or judging
+the folder. Every other folder states its own contract in a `CONTEXT.md`: what it holds,
+what may be written into it, and what a human checks before anything is added. Open the folder and
+the contract is the first thing in it. `CLAUDE.md` routes an agent through the same structure
+without repeating any of it.
+
+---
+
 ## What you get
 
 Three verdicts, and no fourth:
@@ -716,22 +737,3 @@ summary.
   number drifts. Audit a sheet from outside the corpus and rebuild.
 - **Paywalled standards.** ISO 11014 and its like cannot be shipped, so they are not cited.
 - **OCR.** Salus does not guess at pixels. A scanned sheet gets CANNOT VERIFY.
-
-## The folder
-
-    identity.md     who the auditor is, the three verdicts, the boundaries, the blind spots
-    rules.md        how it audits: seven stages, the finding format, severity, how to read
-    examples.md     five real audits, covering all three verdicts
-    reference/      the standards themselves, plus the ledger and the freshness log
-    README.md       this file
-    config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the age arithmetic, the five checks a run must pass, two docs
-                    gates, the settings reader, builder, freshness
-    test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
-    audits/         eight worked runs, with the renderings and fidelity reports they used
-
-`README.md`, this file, is the only one here addressed to a person: whoever is using or judging
-the folder. Every other folder states its own contract in a `CONTEXT.md`: what it holds,
-what may be written into it, and what a human checks before anything is added. Open the folder and
-the contract is the first thing in it. `CLAUDE.md` routes an agent through the same structure
-without repeating any of it.
