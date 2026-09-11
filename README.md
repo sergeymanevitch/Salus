@@ -132,6 +132,11 @@ python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
 
+`extract.py` reports and does not gate: it exits 0 on every verdict it can reach, because writing
+the rendering and the evidence is its whole job. `verify_conversion.py` is where a verdict becomes an
+exit code. Chain them in that order and the shell stops where `rules.md` says to stop, and nowhere
+else.
+
 Eight finished runs are already in `audits/`, covering both jurisdictions and all three verdicts,
 with the renderings and fidelity reports they used. `examples.md` walks through five of them in
 detail.
@@ -315,13 +320,18 @@ from a fresh clone's root and from your home directory.
 
 **Gate 1** extracts the sheet with two independent engines, poppler and pypdf, and asserts that
 nothing the second one found is missing from what the first one shipped: every distinct character,
-every word and number token, every chemical identifier and hazard code. It also proves by SHA-256
-that the shipped Markdown *is* the extraction and not a cleaned-up version of it. Across the
-twenty-two real sheets it returns PASS on twelve, REVIEW on nine, and UNCONFIRMED on one, a sheet
-encrypted with AES that the second engine cannot open without the `cryptography` package, so its
-completeness is simply not checked and the report says so. `extract.py` states in its own docstring
-what it cannot prove: two engines missing the same content agree and are wrong together, which is
-why per-page text density is reported separately.
+every word and number token, every chemical identifier and hazard code. It runs the same comparison
+`extract.py` wrote into the fidelity report — the same function, not a second implementation of it —
+against different inputs: the PDF and the rendering on disk, never the JSON. It also proves the
+shipped Markdown *is* the extraction, by SHA-256, rather than a cleaned-up version of it. It is no
+rubber stamp: across the twenty-two real sheets it returns PASS on twelve, REVIEW on nine, and
+UNCONFIRMED on one, a sheet encrypted with AES that the second engine cannot open without the
+`cryptography` package, so its completeness is simply not checked and the report says so. On the
+constructed scanned sheet it returns NO TEXT LAYER and exits 1, with or without `--strict`. It used
+to call that a pass: a gate that compares two empty extractions, finds them equal and reports
+success has proved nothing. `extract.py` states in its own docstring the thing it cannot prove, that
+two engines missing the same content agree and are wrong together, which is why per-page text
+density is reported separately.
 
 **Gate 2 reads the report, not just the reference folder.** It pulls every quoted provision out of
 every finding and looks for that text in the file the finding names. A checker that only re-reads
