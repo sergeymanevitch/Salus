@@ -351,9 +351,12 @@ There is a fourth check, smaller and aimed at this repository rather than at a s
 gates over it, so the file that teaches the citation format cannot drift into teaching one the
 gates reject.
 
-**Gate 3** checks the verdict shape, that every finding declares whether it rests on a provision or
-on house policy, that the header names a regime and applies that regime's standard, that blind spots
-are stated, and that no permission language survived. On a US run it also requires the report to
+**Gate 3** checks the verdict against the report's own contents — a CONFORMS or a CANNOT VERIFY
+report that lists findings is refused, because a finding of either class produces DOES NOT CONFORM —
+that every finding tag declares whether it rests on a provision or on house policy, that the header
+names a regime and applies that regime's standard, that the blind spots are declared under their
+heading rather than merely announced by it, and that no permission language survived outside
+quotation marks. On a US run it also requires the report to
 record Section 3 as *not assessed for classification correctness*, the sentence that keeps a US
 report from reading as though the classification had been checked and held.
 
@@ -418,17 +421,27 @@ only the defects it never had is not being audited.
    words sit."**
    Append `This material is safe to use.` to a copy of any report and run
    `python3 tools/validate_report.py` on it. Two boundary breaches are reported and the run is
-   voided. Then run the harder version: put the same sentence *inside* a finding, on an indented
-   `WHY` line, which is where an auditor's own prose actually lives. Three breaches, voided there
-   too. Only text inside quotation marks is exempt, because a finding has to be able to quote a
-   sheet whose Section 7 says "safe to use" without being accused of having said it.
+   voided. Then run the harder versions. Put `This material is safe to use and workers may use
+   it.` *inside* a finding, on an indented `WHY` line, where an auditor's own prose actually
+   lives: three breaches. Break it across the line wrap this format mandates, so no single line
+   carries the whole phrase: still refused. Write it into the summary table at the top of the
+   report: refused there too. Only text inside quotation marks is exempt, because a finding has to
+   be able to quote a sheet whose Section 7 says "safe to use" without being accused of having
+   said it.
 
-   *This is the gate's second implementation.* The first exempted any line indented four or more
+   *This is the gate's third implementation.* The first exempted any line indented four or more
    spaces, reasoning that indented lines are quotations, and `rules.md` mandates exactly that
    indentation for every `WHAT`, `WHERE`, `RULE` and `WHY`. Roughly three quarters of every report
-   went unscanned, and the appended form above was the one path that still worked. Quotation is
-   marked by quotation marks, not by whitespace, and the exemption now sits where quotation is.
-   The ban list is in that script, in plain sight, in English and Russian.
+   went unscanned, and the appended form above was the one path that still worked. The second
+   replaced that with a list of exempt contexts: a blockquote, a table row, any line carrying the
+   word *quote*, a Salus disclaimer. Each was a way of saying the banned thing and being told the
+   report may be delivered — `| Conclusion | the material is safe to use |` was exempt for being a
+   table row, in the summary table, which is the first thing a reader sees. There is no list now.
+   Quotation is marked by quotation marks and by nothing else; the marks have to pair, so a report
+   carrying an odd number of them is refused before it is scanned at all; and the scan reads the
+   whole report rather than one line at a time, because this format wraps a sentence across lines
+   and a breach does not stop being one at the line break. The ban list is in that script, in
+   plain sight, in English and Russian.
 
 3. **"The standards in `reference/` are the ones in force, and the tool knows when it last checked."**
    Run `python3 tools/check_freshness.py` with a connection. It reports each standard against
