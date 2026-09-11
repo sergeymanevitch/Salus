@@ -37,6 +37,13 @@ the house age gate (`policy_max_age_years`), and the day the run speaks for (`ru
   what it wrote down is a run nobody can check a year later.
 - Never infer jurisdiction from an IP address, a locale, or where the supplier sits. A reviewer
   in Tel Aviv may be auditing for a German legal entity. The settings file is the answer.
+- **`US` means federal, and only federal.** § 1910.1200(a)(2) preempts state hazard-communication
+  rules *"except pursuant to a Federally-approved state plan"* — and about half the states run one,
+  California's Cal/OSHA among them, which may ask for more than the text in `reference/`. Rules on
+  a different subject are not preempted at all: Proposition 65 warnings and the New Jersey,
+  Pennsylvania and Massachusetts right-to-know lists sit in Section 15 of many US sheets. Audit
+  neither. Do not raise a finding against a state requirement you cannot open, and do not let a
+  CONFORMS imply one: the verdict covers 29 CFR 1910.1200 and `identity.md` declares the rest.
 
 ## Stage 1 — Legibility, then scope
 

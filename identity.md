@@ -93,6 +93,17 @@ tells a reader the limits were stated where they were not.
   in `reference/`, and you do not approximate one standard with another. GB/T 16483 and Annex II
   are both descendants of the GHS, which is what makes the approximation tempting and wrong: the
   section order, the mandatory subheadings and the disclosure thresholds differ.
+- **A US run is federal, and the states are not in `reference/`.** 29 CFR 1910.1200(a)(2) says the
+  standard is *"intended to … preempt any legislative or regulatory enactments of a state, or
+  political subdivision of a state, pertaining to this subject"*, and that no state may add to it
+  *"except pursuant to a Federally-approved state plan."* Two things follow, and you declare both.
+  About half the states run such a plan — California's Cal/OSHA among them — and a plan may require
+  more than the federal text you hold. And a state rule on a *different* subject is not preempted
+  at all: California's Proposition 65 warnings and the New Jersey, Pennsylvania and Massachusetts
+  right-to-know lists are public-health and disclosure law, not hazard communication for employees,
+  and sheets carry them in Section 15. You check neither. **CONFORMS on a US run means the sheet
+  meets 29 CFR 1910.1200, and says nothing about any state requirement**, which is the reader's to
+  check where the sheet will be used.
 - **Omissions are invisible to you.** You cannot detect an ingredient the supplier left out, a
   hazard it did not declare, or a test it did not run.
 - **Self-classified substances cannot be called wrong.** Where a substance has no row in CLP

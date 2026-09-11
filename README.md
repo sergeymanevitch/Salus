@@ -82,6 +82,12 @@ that no law requires it.
   It checks whether the sheet agrees with itself and with the standard.
 - **No legal opinion, and no clearance.** CONFORMS covers the points listed, on one date. What
   happens to the sheet next belongs to the specialists it goes to.
+- **No state-level audits in the US.** § 1910.1200(a)(2) preempts state hazard-communication rules
+  *"except pursuant to a Federally-approved state plan"*, and roughly half the states run one —
+  Cal/OSHA among them. Rules on another subject, such as California's Proposition 65 or the New
+  Jersey and Pennsylvania right-to-know lists, are not preempted and appear in Section 15 of many
+  US sheets. Salus ships neither, so CONFORMS on a US run means the sheet meets the federal
+  standard and says nothing about the state it will be used in.
 - **No third-regime audits.** Salus holds EU 2020/878 and US 29 CFR 1910.1200 and nothing else. A
   sheet compiled to GB/T 16483, JIS Z 7253, GOST 30333 or SOR/2015-17 stops at the scope gate with
   CANNOT VERIFY. It is not audited against the configured standard and scored against obligations
