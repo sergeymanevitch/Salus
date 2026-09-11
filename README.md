@@ -250,16 +250,10 @@ flowchart LR
     CLP --> A
     LED --> A
     LOG --> A
-
-    EU -.-> G0
-    US -.-> G0
-    CLP -.-> G0
-    PROV -->|hashes read back| G0{"CHECK 3 · Gate 0<br/>verify_reference.py<br/>still what was generated?"}
+    PROV -.->|"CHECK 3 above reads these back,<br/>before a citation out of them is believed"| A
 
     classDef s fill:#3a2f12,stroke:#e0c268,color:#fff6df
-    classDef g fill:#12314f,stroke:#7fb6f0,color:#eaf4ff
     class EU,US,CLP,LED,LOG,PROV s
-    class G0 g
 ```
 
 ---
