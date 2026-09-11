@@ -1,8 +1,8 @@
 # tools/ — what runs, and when
 
-Six scripts, three jobs. Nothing here decides anything about a sheet: the audit is the reading, and
-these are the machinery around it — one that prepares the sheet, three that guard the answer, two
-that keep the standards current.
+Seven scripts, four jobs. Nothing here decides anything about a sheet: the audit is the reading, and
+these are the machinery around it — one that prepares the sheet, three that guard the answer, one
+that holds the documentation to the format it teaches, and two that keep the standards current.
 
 ## Run for every audit, in this order
 

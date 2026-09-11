@@ -122,7 +122,7 @@ python3 tools/verify_citations.py audits/my-run/report.md
 python3 tools/validate_report.py  audits/my-run/report.md
 ```
 
-Six finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
+Seven finished runs are already in `audits/` — both jurisdictions, all three verdicts — with the
 renderings and fidelity reports they used. `examples.md` walks through five of them in detail.
 
 Optional, when there is a network:
@@ -139,7 +139,8 @@ they need a terminal; if you are reading this inside a Claude project, see *Wher
 
 1. **Open any finding and follow its citation.** `examples.md` → a finding → the file named in
    `WHERE IN THE STANDARD` → the provision, as text, in `reference/`. Not a link, not a summary.
-   Five runs are shipped: three EU, one US, and one that could not be read at all.
+   Five of the seven filed runs are walked there: three EU, one US, and one that could not be
+   read at all.
 2. **Make the checker disagree with the report.** See *Claims written to be falsified* below: tamper
    with one character of a quoted provision and watch `verify_citations.py` fail by name.
 3. **Try to make it approve a material.** Append `This material is safe to use.` to a report and run
@@ -381,9 +382,9 @@ summary.
     reference/      the standards themselves, plus the ledger and the freshness log
     README.md       this file
     config/         jurisdiction and house policy — fill this in before the first run
-    tools/          extraction, the three gates, the reference builder, the freshness check
+    tools/          extraction, the three gates, the docs gate, the reference builder, freshness
     test-cases/     22 real manufacturer sheets, and two constructed fixtures kept apart
-    audits/         six worked runs, with the renderings and fidelity reports they used
+    audits/         seven worked runs, with the renderings and fidelity reports they used
 
 `README.md` is the only file of its kind, and it is this one — it addresses the person using or
 judging the folder. Every other folder states its own contract in a `CONTEXT.md`: what it holds,
