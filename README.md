@@ -324,7 +324,7 @@ drifted away from the text they cite. This one fails when the report and the sta
 standard" is worth no more than the standard being the one that was downloaded: a date edited into
 the regulation would be *confirmed* by the gate whose job is to confirm provisions. So every
 generated file is rehashed against the SHA-256 that `build_reference.py` wrote into its
-`reference/*/PROVENANCE.md` before a single citation is checked. That is 4 files and 444 KB, about
+`reference/*/PROVENANCE.md` before a single citation is checked. That is 4 files and 451 KB, about
 5 ms against the gate's own 130. A corpus that does not match its own provenance stops the gate
 with that diagnosis rather than blaming the report, and there is no flag to skip it. Run
 `python3 tools/verify_reference.py` on its own to ask the question about the folder rather than
@@ -477,7 +477,7 @@ only the defects it never had is not being audited.
        git checkout -- reference/eu-2020-878/regulation-2020-878.md           # and it passes again
 
    Delete a shipped standard instead, or drop a file of your own into a generated folder, and it
-   fails the same way by name. On a clean corpus it reports what it verified: 4 files, 444,018
+   fails the same way by name. On a clean corpus it reports what it verified: 4 files, 451,184
    bytes, three standards, against the hashes `build_reference.py` recorded.
 
    *Until this existed, nothing ever read those hashes.* Every `PROVENANCE.md` shipped a SHA-256 of
