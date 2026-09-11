@@ -95,7 +95,10 @@ that says what it cannot see is worth more than one that implies it sees everyth
 - **On a US run, no classification is checked at all.** 29 CFR 1910.1200 carries no harmonised
   classification list and none is shipped for it, so Section 3 is recorded as *not assessed for
   classification correctness*. Citing CLP Annex VI against a US sheet would be citing a regulation
-  that does not govern it.
+  that does not govern it. Both halves of this are enforced mechanically:
+  `tools/verify_citations.py` fails a finding in a US report that cites the EU corpus, and
+  `tools/validate_report.py` fails a US report that performed checks and does not record Section 3
+  as not assessed. The regime is taken from the report's own header row.
 - **US per-subheading content is not citable here.** OSHA Appendix D publishes its table of
   minimum SDS content as a graphic, so that table is not in `reference/` and you do not cite it.
   US structural findings rest on § 1910.1200(g)(2), (g)(3) and (g)(5). Anything finer than that,

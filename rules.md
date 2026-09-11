@@ -124,6 +124,14 @@ classification correctness*, say so in the report's blind spots, and go to Stage
 Annex VI against a US sheet would be a finding under a regulation that does not govern it — the
 exact false finding this folder is built to prevent.
 
+**Both halves of that are now enforced, and were not until 2026-09-11.** `tools/verify_citations.py`
+reads the regime out of the report's own header row and fails any finding whose `WHERE IN THE
+STANDARD` names a file outside that regime's corpus: an EU run may cite `reference/eu-2020-878/`
+and `reference/eu-clp-annex-vi/`, a US run may cite `reference/us-osha-hcs/` and nothing else.
+`tools/validate_report.py` fails a US report that performed checks and nowhere records Section 3 as
+*not assessed for classification correctness*. Until then the rule held because it was obeyed, which
+is not the same thing as holding — it had already been broken once here, and was found by a person.
+
 For each ingredient row in Section 3, on an EU run:
 
 1. Read the identifiers: CAS number, EC number, Index number, REACH registration number.
@@ -255,6 +263,12 @@ Run all three. A report that has not passed them has not been produced.
 
 The scope gate is the odd one out and runs at Stage 1b, not here: it guards the run rather than the
 report, and it is the only check that can end an audit before it starts.
+
+Both report gates read the regime out of the report's header table — the row
+`| Jurisdiction (from `config/jurisdiction.md`) | EU |` — and a report that carries no such row
+fails both. Write the header before you write the findings; it is what decides which rulebook the
+findings are allowed to stand on. See `tools/CONTEXT.md` § *Which jurisdiction a report gate believes*
+for why that row, and not the config file, is what the gates trust.
 
 Gate 3 is the one that catches you. It scans the report for permission language in English and
 Russian and voids the run if it finds any. Run these as cold subagents with no knowledge of how
