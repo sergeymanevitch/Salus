@@ -64,6 +64,13 @@ list. A sheet that tells a German reader its components appear on China's IECSC 
 sheet with an inventory paragraph. Adding a regime to the gate's list is a deliberate edit to
 `tools/check_scope.py`, and making a sheet pass by deleting one is forbidden outright.
 
+A word is not a declaration either, and that cuts the other way — towards the stop, not away from
+it. `REACH` is a regulation and an ordinary English verb, and *"Keep out of reach of children"* is
+GHS precautionary statement P102, printed on sheets of every regime including the ones this folder
+does not hold. The gate reads `REACH` as a declaration of Annex II only where the sheet writes it
+as one: prepared, compiled, issued or conforming to it, or Annex II named beside it. Read loosely,
+that one line of boilerplate was enough to suppress the stop on a sheet compiled to GB/T 16483.
+
 ## Stage 2 — Age gate *(house policy, not a provision)*
 
 Find the date of issue or last revision. Compare with the run date.
@@ -178,7 +185,8 @@ basis to, and choosing one would be advising about the material.
 
 ## How a finding is written
 
-Every finding carries five things. A finding missing any of them is not shippable.
+Every finding carries five things. A finding missing any of them is not shippable, and a label
+with nothing written under it is missing: `tools/verify_citations.py` reads the body, not the word.
 
     [F-03] [STANDARD] BLOCKING — Section 3 departs from Annex VI without the Note L basis
       WHAT   Section 3 lists "Distillates (petroleum), hydrotreated heavy naphthenic",
@@ -200,10 +208,19 @@ Every finding carries five things. A finding missing any of them is not shippabl
 
 Two details in that example are not cosmetic, and `tools/verify_citations.py` enforces both.
 
-**One verbatim quote per rule, not several short ones.** The gate pulls quoted strings out of the
-RULE and looks for each in the file named. Two short quotes on one line — `"Carc. 1B", column "L"` —
-are read as one quote running from the first closing mark to the next opening one, which is text
-that appears in no standard anywhere. Quote the row, once, as it reads.
+**Every quoted string is checked, however short.** The gate pulls each string between double
+quote marks out of the RULE and looks for it in the file the finding names — `"Carc. 1B"`, `"H350"`
+and `"Note L"` exactly as readily as a whole sentence. Quote the standard's own words, at whatever
+length says the thing, and quote them as they read.
+
+There was a floor here until 2026-09-11: strings shorter than twelve characters were skipped, and
+this file defended that by saying two short quotes on one line are read as one quote running from
+the first closing mark to the next opening one. **That was never true of the regex that does the
+reading.** Its character class cannot cross a quote mark, so `"Carc. 1B", column "L"` yields two
+needles and not one. What the floor did instead was leave the hazard classes, the H-codes and the
+Note letters — the atoms of a classification finding, and the strings a reader is least able to
+check by eye — unverified, on a justification that a reader could have disproved in one line of
+Python. It is gone.
 
 **The example above is itself run through the gate**, by `tools/test_docs_example.py`, which lifts
 it out of this file and puts it through the real citation and boundary checks. It has to be: this
@@ -224,6 +241,11 @@ as in text — a report read six months from now still says what Salus knew when
 Both can produce DOES NOT CONFORM. They must never look alike on the page. A reader has to be
 able to tell at a glance which findings the law requires and which this installation requires,
 because those two carry different weight in a conversation with a supplier.
+
+The marker is also how `tools/verify_citations.py` recognises a finding at all. A heading that
+omits it is not a finding to the gate: nothing under it is read, no provision is looked for, and
+the report leaves the gate with the same counts as if the block had never been written. So an
+unmarked heading is failed on sight, by name, before any other check runs.
 
 ## Severity
 
