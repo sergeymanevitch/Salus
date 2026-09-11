@@ -112,20 +112,61 @@ Two consequences worth knowing before you write a report.
 
 | Script | Job |
 | --- | --- |
-| `check_age.py` | find every date the rendering states beside a word claiming to be an issue or revision date, measure the newest of them against `run_date` and `policy_max_age_years`, and say whether a house-policy finding is owed. **It reports; it does not gate** — exit 0 either way, non-zero only when the rendering cannot be read |
+| `check_age.py` | find every date the rendering states beside a word claiming to be an issue, revision or superseded-version date, eliminate the readings the document itself rules out, measure the newest governing one against `run_date` and `policy_max_age_years`, and say whether a house-policy finding is owed. `--pdf <sheet.pdf>` is optional and adds one elimination. **It reports; it does not gate** — exit 0 either way, non-zero only when the *rendering* cannot be read. An unreadable or absent PDF is not a failure, it is one fewer signal |
 
 It is the only script that touches the audit's own reasoning, and the line it does not cross is the
 one AD-15 draws. The subtraction is mechanical: what a date *means* is not. Two things in this
-corpus say why. `03/04/2026` is two dates, so both readings are printed and each convention is
-applied to the whole sheet — a supplier writes dates one way, not both — and where the two fall on
-opposite sides of the limit the script says so and stops. And the shipped Carboguard sheet carries a
-print date one year after its revision date: the gate runs on the revision, and only the words
-beside a date are evidence of which is which.
+corpus say why. `03/04/2026` is two dates, and the shipped Carboguard sheet carries a print date one
+year after its revision date: the gate runs on the revision, and only the words beside a date are
+evidence of which is which.
+
+**What it now does about the first of those.** A supplier writes dates one way and not both, so the
+script works on *conventions* — d/m/y and m/d/y, applied to the whole sheet — and runs four signals
+in order, each of which can only **remove** a convention and can never supply a date:
+
+1. **Shape.** `30.08.2024` and `16/04/2019` have one reading each. A month written as a word or an
+   ISO date has one reading too, and neither says anything about how the sheet writes its *numeric*
+   dates, so neither is allowed to settle one.
+2. **The sheet's own convention.** One governing date that shape reads only one way fixes the
+   convention for every ambiguous date on the sheet. Only a *governing* date may do it, which is
+   narrower than the premise needs — a print date is typeset by the same generator — and two corpus
+   sheets turn on that width. Both stay undecided rather than be settled by a date the gate is not
+   about, and the unused evidence is printed by name so the choice is visible.
+3. **The order the sheet itself states.** A superseded or replaced version is older than the
+   revision that superseded it, and an issue date falls on or before its revision. Annex II
+   provision 0.2.5 requires a revised sheet to indicate which version it replaces and names a
+   *supersedes date* as one of the three ways, so for an EU sheet this is what the required field
+   means, not a guess about how suppliers write.
+4. **The file's own timestamp, as an upper bound** — only with `--pdf`. A sheet cannot state a date
+   later than the last time its own file was written. **Never as a value:** LOCTITE 270's `/ModDate`
+   is the printing date on its own first page, four months after the revision it states. Absent,
+   stripped or unreadable metadata means no constraint and never a guessed date; three corpus sheets
+   are already in that position, one of them because it is encrypted.
+
+Every elimination is printed with the signal that made it and the line it rests on, because a
+resolved ambiguity that reads as certainty is the failure this whole folder is written against.
+Where two readings survive, both are printed and the script says the document does not settle it.
+That residue is the answer. The regime prior — EU d/m/y, US m/d/y — only orders what is printed and
+never removes anything: JET-LUBE is a GB-market sheet written m/d/y, because its supplier is
+American.
+
+**What it still cannot prove.** That the words beside a date meant what they say. That a surviving
+reading is the one the supplier intended — it survived because the others were ruled out, which is
+a weaker claim and is the one printed. And the bound is only as good as the file: the corpus holds
+a sheet, CRC ECO Leak Finder, whose stated dates are *later* than its own `/ModDate` and whose
+stated issue date falls *after* its stated revision date. So no signal is allowed to remove the last
+surviving reading: when one contradicts everything left, the contradiction is printed and nothing is
+eliminated. On the 22 corpus sheets this leaves two sheets whose date is genuinely unsettled, and
+neither changes a verdict.
 
 It also prints what it could not read. A line that claims a date and yields none is listed as such,
 because `rules.md` Stage 2 turns *no date found* into CANNOT VERIFY — a verdict, and too much
-weight for a regex to carry quietly. That guard earned itself immediately: the first version read
-only digits and answered NO DATE FOUND on the sheet that dates itself `Issue date June-30-2025`.
+weight for a regex to carry quietly. That guard earned itself twice: the first version read only
+digits and answered NO DATE FOUND on the sheet that dates itself `Issue date June-30-2025`, and the
+second had `revision date` but not a bare `Revision:` — the form 0.2.5 *prescribes* — and so
+answered NO DATE FOUND on LOCTITE 270, a sheet that complies with it. The sheet was right and the
+reader was wrong, which is the worst direction for this kind of error to run. That list of unparsed
+claims should stay printed forever: the next corpus will state a date in a form this one does not.
 
 ## The settings, and the one script that reads them
 

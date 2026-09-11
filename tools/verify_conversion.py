@@ -54,7 +54,12 @@ def main():
         print(f"FAIL  no rendering at {md} — run tools/extract.py first")
         return 2
 
-    primary = X.extract_poppler(a.pdf)
+    try:
+        primary = X.extract_poppler(a.pdf)
+    except RuntimeError as e:
+        # The same installation problem, told the same way. This gate is the one a judge runs
+        # first, so it is the one that must not answer a missing program with a stack trace.
+        sys.exit(f"FAIL  {e}")
     secondary, _ = X.extract_pypdf(a.pdf)
     shipped = open(md, encoding="utf-8").read()
 

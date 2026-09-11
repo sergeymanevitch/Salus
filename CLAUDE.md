@@ -26,6 +26,13 @@ a few thousand tokens, and it only does if that rule is kept.
 - `examples.md` — five finished runs, covering all three verdicts and both regimes, if you want to
   see the shape before working.
 
+## If you have no shell
+
+You are probably reading this inside a Claude project, where none of the scripts below exist. The
+audit still runs: `rules.md` opens with the four lines that change, and `README.md` § *Quick start
+— in a Claude project* is written for the person who put you here. The one rule that matters: write
+down what was not checked, rather than claiming a check nobody made.
+
 ## The one thing that ends a run before it starts
 
 Run `python3 tools/check_scope.py <sheet>.salus.md` after converting and before auditing. Exit 2

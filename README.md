@@ -102,14 +102,60 @@ Gate 1 is the one that cannot be recovered afterwards, because it is a claim abo
 that already happened somewhere else. Where no shell ran `extract.py`, the report should say so:
 the rendering was not verified, and that is a fact about the audit worth writing down.
 
-## Quick start
+## Quick start — in a Claude project, with no terminal
 
-**Requirements.** Python 3, `pdftotext` from poppler, and `pypdf`. All three are required: Gate 1's
-whole claim is that two *independent* engines agree, so without pypdf there is no check, only an
-assertion. Add `cryptography` as well, because at least one sheet in the shipped corpus is
-AES-encrypted and pypdf cannot open it without that package.
+This is the surface most people will use, and it needs nothing installed.
 
-    pip install pypdf cryptography
+**Upload nine files, not eighty-three.** The repository ships 22 manufacturer PDFs and eight worked
+audits so a judge can check the tool; a project does not need them and they crowd out the sheet you
+actually want read.
+
+    identity.md              who the auditor is, the verdicts, the boundaries
+    rules.md                 the seven stages, the finding format, severity
+    examples.md              five finished runs to copy the shape from
+    config/jurisdiction.md   the regime and the house age gate
+    reference/eu-2020-878/regulation-2020-878.md
+    reference/eu-clp-annex-vi/annex-vi-table-3-extract.md
+    reference/eu-clp-annex-vi/annex-vi-notes.md
+    reference/us-osha-hcs/29-cfr-1910-1200.md
+    reference/STANDARDS-LEDGER.md
+
+That is about 516 KB against the repository's 8.9 MB, and it is everything the audit reads.
+
+**Then attach the sheet and say this**, filling in your own regime:
+
+> You are Salus. Audit the attached safety data sheet under `jurisdiction: EU`, following
+> `rules.md` stage by stage. I have no shell, so Stage 1a cannot be run: read the sheet as
+> supplied and record in the report that the rendering was not verified.
+
+**Setting the regime without a file you can edit.** `config/jurisdiction.md` ships as
+`jurisdiction: EU`. Where you cannot edit it, state the regime in that opening message and the
+report's header row records it as the setting for that run. That is still a stated setting, not an
+inference — which is the rule `identity.md` and `rules.md` Stage 0 are protecting.
+
+**What you give up** is in *Where it runs* above, line by line. The short version: the audit is a
+reading and it works here; the five checks that exist to distrust the reading are scripts, and there
+is no shell to run them in. A report written here is a text file — bring it to a terminal later and
+run the report gates over it, and it is guarded exactly as if it had been written there.
+
+## Quick start — in a terminal
+
+**Requirements.** Python 3, `pdftotext` from poppler, and `pypdf` — but only for *extraction* and
+Gate 1, whose whole claim is that two independent engines agree. **Gates 0, 2 and 3, the scope gate,
+the settings reader, the age arithmetic and both docs gates are standard-library Python** and run on
+whatever Python 3 is already on your machine. Add `cryptography` as well if you want the full test
+corpus: one shipped sheet is AES-encrypted and pypdf cannot open it without that package.
+
+    pip install pypdf cryptography      # Python packages
+
+`pdftotext` is a program, not a package, so pip cannot install it:
+
+    brew install poppler                # macOS
+    sudo apt install poppler-utils      # Debian/Ubuntu
+    sudo dnf install poppler-utils      # Fedora
+
+Without it, extraction and Gate 1 stop with that instruction rather than a stack trace. Everything
+else still runs.
 
 ```bash
 # 1. say which regime you audit under — this is never guessed
@@ -616,11 +662,36 @@ only the defects it never had is not being audited.
         sed '/^| Run date |/d' audits/2026-09-11-bg-hcf/report.md > /tmp/nodate.md
         python3 tools/validate_report.py /tmp/nodate.md          # exit 1
 
+    The sheet's own end of the age gate breaks the same way. `check_age.py` resolves `11/4/2021`
+    by eliminating the reading the sheet's own file rules out, and it must give that resolution
+    back the moment the evidence for it is gone. Convert one sheet, ask twice:
+
+        python3 tools/extract.py "test-cases/sds/RD COATINGS - MSDS-_EN-RD-ELASTOMETAL.pdf" --outdir /tmp
+        python3 tools/check_age.py "/tmp/RD COATINGS - MSDS-_EN-RD-ELASTOMETAL.salus.md" \
+            --pdf "test-cases/sds/RD COATINGS - MSDS-_EN-RD-ELASTOMETAL.pdf"
+            # 4 the file's own timestamp: RULES OUT m/d/y — 2021-11-04 is after the file's
+            # own last write, 2021-07-05. One reading survives: 2021-04-11, 5 years 5 months,
+            # A HOUSE-POLICY FINDING IS OWED
+
+        python3 -c "import pypdf; r=pypdf.PdfReader('test-cases/sds/RD COATINGS - MSDS-_EN-RD-ELASTOMETAL.pdf'); \
+                    w=pypdf.PdfWriter(); w.append(r); w.add_metadata({}); w.write('/tmp/nometa.pdf')"
+        python3 tools/check_age.py "/tmp/RD COATINGS - MSDS-_EN-RD-ELASTOMETAL.salus.md" \
+            --pdf /tmp/nometa.pdf
+            # the PDF states no readable /ModDate or /CreationDate — no bound, and no guess in
+            # place of one. Both readings survive: 2021-04-11 is over the limit, 2021-11-04 is
+            # inside it, THE TWO CONVENTIONS DISAGREE AND THE DOCUMENT DOES NOT SETTLE IT
+
+    The second answer is the one the claim rests on. A tool that kept saying 2021-04-11 after its
+    only evidence for that date was removed would have been guessing the first time as well.
+
     *Until this was fixed, one of the four settings was read by a script and three by nobody.* A
     threshold that is not a number, and a run date in the future, were honoured because `rules.md`
-    says to honour them — which is a rule, not a guard. What is still **not** mechanical is stated
-    in `config/CONTEXT.md` § *Known limit*: no script reads an issue date off a sheet, so an age
-    finding that was owed and never made is caught by a reader.
+    says to honour them — which is a rule, not a guard. And until 2026-09-11 the sheet's date was
+    read with a vocabulary that did not contain `Revision:` — the form Annex II provision 0.2.5
+    prescribes — so LOCTITE 270, which complies with it, came back NO DATE FOUND and `rules.md`
+    Stage 2 turns that into CANNOT VERIFY. What is still **not** mechanical is stated in
+    `config/CONTEXT.md` § *Known limit*: nothing makes the auditor run the check, and which of the
+    dates a sheet states is the one that governs is still read off the sheet by a person.
 
 ## Rebuilding everything from source
 

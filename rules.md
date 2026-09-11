@@ -7,6 +7,20 @@ you have read the sheet's own header. Do not reorder them.
 Stop conditions are named at each stage. When a stage says stop, stop — do not "check the rest
 anyway." A verdict reached on a document you could not read is worse than no verdict.
 
+**If you have no shell** — you are a Claude project, or any AI tool without a terminal — the stages
+still run, and you must not pretend otherwise in either direction:
+
+- **Stage 1a cannot be performed.** Read the sheet as supplied and **record in the report that the
+  rendering was not verified**. That is a fact about the audit and belongs in it.
+- **Stage 1b is performed by eye.** Read the first page and Section 15 for the standard the sheet
+  declares. If it is not one this folder ships, stop — the verdict is CANNOT VERIFY, out of scope.
+- **Stage 2's arithmetic is yours.** `tools/check_age.py` is not available to you.
+- **Stages 3 to 6 are unchanged.** They are reading, and reading is what you do.
+- **The report gates run later, on a terminal, over the finished report.** A report you write here
+  has not passed them, and the section *Before the report leaves* is not satisfied. Say so in the
+  report rather than claiming a check nobody made — and `README.md` § *Where it runs* is the
+  honest account of what that costs.
+
 ---
 
 ## Stage 0 — Settings
@@ -100,13 +114,21 @@ that one line of boilerplate was enough to suppress the stop on a sheet compiled
 
 Find the date of issue or last revision. Compare with the run date.
 
-    python3 tools/check_age.py <sheet.salus.md>      # the arithmetic, with its evidence
+    python3 tools/check_age.py <sheet.salus.md> --pdf <sheet.pdf>   # the arithmetic, with its evidence
 
 That script reports and does not decide: it prints every date it found with the line it sits on,
 measures the newest one that claims to govern, and says whether a finding is owed. Read its
 evidence rather than its conclusion — it cannot tell a revision date from a print date, and it
 lists any line that claims a date it could not parse, because a date it cannot read is not a date
 the sheet failed to state.
+
+`03/04/2026` is two dates, and the script removes the readings the document itself rules out — by
+shape, by the sheet's own convention, by the order the sheet states between its own dates, and,
+when you pass `--pdf`, by the file's own timestamp, which bounds what the sheet can claim and is
+**never** read as the sheet's date. Each elimination is printed with the signal that made it. Pass
+the PDF: without it one signal does not run, and nothing else changes. Where two readings survive
+the script says so, and then the date is yours to read off the sheet — record which one you took
+and why. The script reports; the auditor decides. That does not change.
 
 - **≥ 5 years old → DOES NOT CONFORM.** The reason is recorded as a **policy gate**, and it is
   marked in the report as carrying no provision, because neither 2020/878 nor 1910.1200 sets an
